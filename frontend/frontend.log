@@ -1,0 +1,55 @@
+
+> digital-forensic-screenshot-analyzer@1.0.0 dev
+> vite
+
+
+  [32m[1mVITE[22m v4.5.14[39m  [2mready in [0m[1m804[22m[2m[0m ms[22m
+
+  [32m➜[39m  [1mLocal[22m:   [36mhttp://localhost:[1m5188[22m/[39m
+[2m  [32m➜[39m  [1mNetwork[22m[2m: use [22m[1m--host[22m[2m to expose[22m
+(node:6004) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///C:/Users/HP/Desktop/ScreenShot_Detector/dfsa/frontend/postcss.config.js is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to \\?\C:\Users\HP\Desktop\ScreenShot_Detector\dfsa\frontend\package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:6004) [DEP0060] DeprecationWarning: The `util._extend` API is deprecated. Please use Object.assign() instead.
+[2m3:46:30 PM[22m [31m[1m[vite][22m[39m [31mhttp proxy error at /api/auth/me:[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1193:18)
+    at afterConnectMultiple (node:net:1783:7)
+[2m3:46:30 PM[22m [31m[1m[vite][22m[39m [31mhttp proxy error at /api/auth/me:[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1193:18)
+    at afterConnectMultiple (node:net:1783:7)
+[2m3:46:57 PM[22m [31m[1m[vite][22m[39m [31mhttp proxy error at /api/auth/login:[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1193:18)
+    at afterConnectMultiple (node:net:1783:7)
+[2m3:47:25 PM[22m [31m[1m[vite][22m[39m [31mhttp proxy error at /api/auth/login:[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1193:18)
+    at afterConnectMultiple (node:net:1783:7)
+[2m3:47:25 PM[22m [31m[1m[vite][22m[39m [31mhttp proxy error at /api/auth/login:[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1193:18)
+    at afterConnectMultiple (node:net:1783:7)
+[2m3:47:26 PM[22m [31m[1m[vite][22m[39m [31mhttp proxy error at /api/auth/login:[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1193:18)
+    at afterConnectMultiple (node:net:1783:7)
+[2m3:47:26 PM[22m [31m[1m[vite][22m[39m [31mhttp proxy error at /api/auth/login:[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1193:18)
+    at afterConnectMultiple (node:net:1783:7)
+[2m3:47:26 PM[22m [31m[1m[vite][22m[39m [31mhttp proxy error at /api/auth/login:[39m
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1193:18)
+    at afterConnectMultiple (node:net:1783:7)
+[2m4:03:54 PM[22m [36m[1m[vite][22m[39m [32mvite.config.js changed, restarting server...[39m
+[2m4:03:54 PM[22m [36m[1m[vite][22m[39m server restarted.
+[2m5:08:27 PM[22m [36m[1m[vite][22m[39m [32mvite.config.js changed, restarting server...[39m
+[2m5:08:27 PM[22m [36m[1m[vite][22m[39m server restarted.
+
+  [32m➜[39m  [1mLocal[22m:   [36mhttp://localhost:[1m5188[22m/[39m
+  [32m➜[39m  [1mNetwork[22m: [36mhttp://192.168.253.1:[1m5188[22m/[39m
+  [32m➜[39m  [1mNetwork[22m: [36mhttp://192.168.110.1:[1m5188[22m/[39m
+  [32m➜[39m  [1mNetwork[22m: [36mhttp://10.5.51.82:[1m5188[22m/[39m

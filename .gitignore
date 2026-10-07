@@ -1,0 +1,35 @@
+# Node
+node_modules/
+dist/
+dist-ssr/
+*.local
+
+# Java/Maven
+target/
+*.class
+*.jar
+*.war
+*.nar
+*.ear
+*.log
+*.sh
+
+# IDEs and Tools
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+.project
+.classpath
+.settings/
+.DS_Store
+
+# Logs and Uploads
+dfsa-uploads/
+logs/
+tessdata/
+
+# Environment Variables
+.env
+.env.local
