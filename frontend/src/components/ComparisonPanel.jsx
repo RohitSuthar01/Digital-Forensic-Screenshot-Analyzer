@@ -40,7 +40,11 @@ export default function ComparisonPanel({ targetId }) {
     setError('');
     axios.post(`/api/screenshots/${targetId}/compare?referenceId=${referenceId}`, null, { withCredentials: true })
       .then(res => setComparisonResult(res.data))
-      .catch(err => setError(err.response?.data || 'Comparison failed'))
+      .catch(err => {
+          const resData = err.response?.data;
+          const msg = typeof resData === 'string' ? resData : (resData?.message || 'Comparison failed');
+          setError(msg);
+      })
       .finally(() => setLoading(false));
   };
 

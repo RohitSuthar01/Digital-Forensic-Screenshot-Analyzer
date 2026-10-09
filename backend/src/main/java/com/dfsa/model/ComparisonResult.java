@@ -17,11 +17,13 @@ public class ComparisonResult {
     @ManyToOne
     @JoinColumn(name = "reference_screenshot_id", nullable = false)
     @OnDelete(action = OnDeleteAction.CASCADE)
+    @com.fasterxml.jackson.annotation.JsonIgnoreProperties("theCase")
     private Screenshot referenceScreenshot;
 
     @OneToOne
     @JoinColumn(name = "target_screenshot_id", nullable = false)
     @OnDelete(action = OnDeleteAction.CASCADE)
+    @com.fasterxml.jackson.annotation.JsonIgnoreProperties("theCase")
     private Screenshot targetScreenshot;
 
     private boolean visualDifferenceDetected;

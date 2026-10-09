@@ -38,7 +38,7 @@ public class ComparisonService {
         Screenshot target = screenshotRepository.findById(targetId).orElseThrow(() -> new IllegalArgumentException("Target not found"));
         Screenshot reference = screenshotRepository.findById(referenceId).orElseThrow(() -> new IllegalArgumentException("Reference not found"));
 
-        if (!target.getCaseEntity().getId().equals(reference.getCaseEntity().getId())) {
+        if (!target.getTheCase().getId().equals(reference.getTheCase().getId())) {
             throw new IllegalStateException("Screenshots belong to different cases");
         }
 
