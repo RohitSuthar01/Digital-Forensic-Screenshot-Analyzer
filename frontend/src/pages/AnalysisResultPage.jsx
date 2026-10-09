@@ -2,11 +2,14 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useParams, Link } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
+import ImageInspector from '../components/ImageInspector';
+import ComparisonPanel from '../components/ComparisonPanel';
 
 const verdictConfig = {
   AUTHENTIC: { color: 'var(--accent-green)', icon: '✅', label: 'Authentic' },
   SUSPICIOUS: { color: 'var(--accent-amber)', icon: '⚠️', label: 'Suspicious' },
   LIKELY_TAMPERED: { color: 'var(--accent-red)', icon: '🚨', label: 'Likely Tampered' },
+  INCONCLUSIVE: { color: '#94A3B8', icon: '❓', label: 'Inconclusive / Needs Review' },
 };
 
 const AnalysisResultPage = () => {
@@ -82,16 +85,12 @@ const AnalysisResultPage = () => {
                 </div>
               </div>
 
-              {/* ELA Image */}
-              {result.elaImageFileName && (
-                <div className="card" style={{ marginBottom: 24 }}>
-                  <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 16 }}>🔬 Error Level Analysis (ELA)</h3>
-                  <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 16 }}>
-                    Bright areas indicate higher error levels, potentially revealing edited regions.
-                  </p>
-                  <img src={`/api/screenshots/${screenshotId}/ela`} alt="ELA" style={{ maxWidth: '100%', borderRadius: 8, border: '1px solid var(--border)' }} />
-                </div>
-              )}
+              <ComparisonPanel targetId={screenshotId} />
+
+              <ImageInspector 
+                originalSrc={`/api/screenshots/${screenshotId}/file`} 
+                elaSrc={result.elaImageFileName ? `/api/screenshots/${screenshotId}/ela-image` : null} 
+              />
 
               {/* Metadata */}
               {result.metadataJson && Object.keys(result.metadataJson).length > 0 && (
