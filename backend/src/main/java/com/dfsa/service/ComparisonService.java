@@ -10,6 +10,8 @@ import org.springframework.stereotype.Service;
 
 import javax.imageio.ImageIO;
 import java.awt.Color;
+import java.awt.Graphics2D;
+import java.awt.Image;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
@@ -67,11 +69,17 @@ public class ComparisonService {
         result.setTargetScreenshot(target);
         result.setMethodVersion("PixelDiff-1.0");
         
+        String initialLimitations = "Simple pixel-wise comparison is sensitive to recompression/scaling shifts. Note: Never claim that the image with fewer differences or a higher score is certainly the original.";
+        
         if (img1.getWidth() != img2.getWidth() || img1.getHeight() != img2.getHeight()) {
-            result.setVisualDifferenceDetected(true);
-            result.setChangedRegionsDetails("Images have different dimensions. Target: " + img1.getWidth() + "x" + img1.getHeight() + ", Reference: " + img2.getWidth() + "x" + img2.getHeight() + ". Cannot determine which is original; human review needed.");
-            result.setLimitations("Direct pixel comparison is unavailable without alignment. Registration/scaling is required for pixel-level differencing.");
-            return comparisonResultRepository.save(result);
+            Image scaledImg1 = img1.getScaledInstance(img2.getWidth(), img2.getHeight(), Image.SCALE_SMOOTH);
+            BufferedImage newImg1 = new BufferedImage(img2.getWidth(), img2.getHeight(), BufferedImage.TYPE_INT_ARGB);
+            Graphics2D g2d = newImg1.createGraphics();
+            g2d.drawImage(scaledImg1, 0, 0, null);
+            g2d.dispose();
+            img1 = newImg1;
+            
+            initialLimitations = "Images had different dimensions. Target was automatically scaled to Reference dimensions for pixel-level differencing. This alignment is highly sensitive to scaling artifacts. Note: Never claim that the image with fewer differences or a higher score is certainly the original.";
         }
 
         int width = img1.getWidth();
@@ -133,7 +141,7 @@ public class ComparisonService {
         if (differenceDetected) {
             double percent = (diffPixels * 100.0) / (width * height);
             result.setChangedRegionsDetails(String.format("Found %d visually different pixels (%.2f%% of image). %s", diffPixels, percent, comparisonStatement));
-            result.setLimitations("Simple pixel-wise comparison is sensitive to recompression/scaling shifts. Note: Never claim that the image with fewer differences or a higher score is certainly the original.");
+            result.setLimitations(initialLimitations);
             
             String diffFileName = "diff_" + UUID.randomUUID().toString() + ".png";
             File diffFile = new File(uploadDir, diffFileName);
@@ -141,7 +149,7 @@ public class ComparisonService {
             result.setDifferenceMapFileName(diffFileName);
         } else {
             result.setChangedRegionsDetails("No visual differences detected (0.00%). " + comparisonStatement);
-            result.setLimitations("No differences found at pixel level. Note: Never claim that the image with fewer differences or a higher score is certainly the original.");
+            result.setLimitations(initialLimitations);
         }
 
         return comparisonResultRepository.save(result);
