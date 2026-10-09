@@ -3,6 +3,8 @@ package com.dfsa.model;
 import jakarta.persistence.*;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.util.Date;
 
@@ -31,6 +33,17 @@ public class AnalysisResult {
     // New field for ELA image file name (stored in the upload directory)
     private String elaImageFileName;
 
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(columnDefinition = "json")
+    private java.util.Map<String, Object> metadataJson;
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(columnDefinition = "json")
+    private java.util.Map<String, Object> tamperHeuristicsJson;
+
+    @Column(columnDefinition = "TEXT")
+    private String ocrText;
+
     @Temporal(TemporalType.TIMESTAMP)
     private Date analyzedAt;
 
@@ -58,11 +71,20 @@ public class AnalysisResult {
     public String getElaImageFileName() { return elaImageFileName; }
     public void setElaImageFileName(String elaImageFileName) { this.elaImageFileName = elaImageFileName; }
 
+    public java.util.Map<String, Object> getMetadataJson() { return metadataJson; }
+    public void setMetadataJson(java.util.Map<String, Object> metadataJson) { this.metadataJson = metadataJson; }
+
+    public java.util.Map<String, Object> getTamperHeuristicsJson() { return tamperHeuristicsJson; }
+    public void setTamperHeuristicsJson(java.util.Map<String, Object> tamperHeuristicsJson) { this.tamperHeuristicsJson = tamperHeuristicsJson; }
+
+    public String getOcrText() { return ocrText; }
+    public void setOcrText(String ocrText) { this.ocrText = ocrText; }
+
     public Date getAnalyzedAt() { return analyzedAt; }
     public void setAnalyzedAt(Date analyzedAt) { this.analyzedAt = analyzedAt; }
 
     // Enums
     public enum AuthenticityVerdict {
-        AUTHENTIC, SUSPICIOUS, LIKELY_TAMPERED
+        AUTHENTIC, SUSPICIOUS, LIKELY_TAMPERED, INCONCLUSIVE
     }
 }

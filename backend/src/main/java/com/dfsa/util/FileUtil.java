@@ -4,31 +4,24 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.file.Files;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
-import java.util.List;
+import java.util.Iterator;
+import javax.imageio.ImageIO;
+import javax.imageio.ImageReader;
+import javax.imageio.stream.ImageInputStream;
 
 import org.springframework.stereotype.Component;
 
 @Component
 public class FileUtil {
 
-    // Allowed MIME types for screenshots
-    private static final List<String> ALLOWED_CONTENT_TYPES = Arrays.asList(
-            "image/png",
-            "image/jpeg",
-            "image/jpg",
-            "image/webp",
-            "image/bmp"
-    );
-
     // Magic bytes for file type verification (first few bytes)
     private static final byte[] PNG_HEADER = {(byte) 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A};
     private static final byte[] JPEG_HEADER = {(byte) 0xFF, (byte) 0xD8, (byte) 0xFF};
-    private static final byte[] WEBP_HEADER = {(byte) 0x52, 0x49, 0x46, 0x46}; // RIFF
     private static final byte[] BMP_HEADER = {(byte) 0x42, 0x4D}; // BM
+    private static final long MAX_DECODED_PIXELS = 40_000_000L;
 
     /**
      * Check if the content type is allowed.
@@ -37,10 +30,10 @@ public class FileUtil {
      * @return true if allowed, false otherwise
      */
     public static boolean isAllowedContentType(String contentType) {
-        if (contentType == null) {
-            return false;
-        }
-        return ALLOWED_CONTENT_TYPES.contains(contentType.toLowerCase());
+        return contentType != null && (contentType.equalsIgnoreCase("image/png")
+                || contentType.equalsIgnoreCase("image/jpeg")
+                || contentType.equalsIgnoreCase("image/jpg")
+                || contentType.equalsIgnoreCase("image/bmp"));
     }
 
     /**
@@ -51,47 +44,36 @@ public class FileUtil {
      * @throws IOException if an error occurs while reading the file
      */
     public static boolean isAllowedFileType(File file) throws IOException {
-        try (InputStream is = new FileInputStream(file)) {
-            // Read the first 8 bytes (enough for all our checks)
-            byte[] header = new byte[8];
-            int bytesRead = is.read(header);
-            if (bytesRead < 8) {
-                return false; // File too small
+        if (getImageFormat(file) == null) return false;
+        try (ImageInputStream input = ImageIO.createImageInputStream(file)) {
+            if (input == null) return false;
+            Iterator<ImageReader> readers = ImageIO.getImageReaders(input);
+            if (!readers.hasNext()) return false;
+            ImageReader reader = readers.next();
+            try {
+                reader.setInput(input, true, true);
+                int width = reader.getWidth(0);
+                int height = reader.getHeight(0);
+                if (width <= 0 || height <= 0 || (long) width * height > MAX_DECODED_PIXELS) return false;
+                return reader.read(0) != null;
+            } finally {
+                reader.dispose();
             }
-
-            // Check for PNG
-            if (Arrays.equals(Arrays.copyOfRange(header, 0, PNG_HEADER.length), PNG_HEADER)) {
-                return true;
-            }
-
-            // Check for JPEG
-            if (Arrays.equals(Arrays.copyOfRange(header, 0, JPEG_HEADER.length), JPEG_HEADER)) {
-                return true;
-            }
-
-            // Check for WEBP (first 4 bytes are RIFF, then we need to check for WEBP at offset 8)
-            if (Arrays.equals(Arrays.copyOfRange(header, 0, 4), WEBP_HEADER)) {
-                // We need to read a few more bytes to check for WEBP
-                // Actually, the full header for WEBP is RIFF....WEBP
-                // We'll read 12 bytes total and check for WEBP at offset 8
-                byte[] more = new byte[4];
-                is.read(more);
-                if (Arrays.equals(more, new byte[]{0x57, 0x45, 0x42, 0x50})) { // WEBP
-                    return true;
-                }
-                // If not WEBP, we can still check for other types? We'll just return false for now.
-                // But note: we already read 12 bytes, we don't want to waste more.
-                // We'll just return false if not WEBP.
-                return false;
-            }
-
-            // Check for BMP
-            if (Arrays.equals(Arrays.copyOfRange(header, 0, BMP_HEADER.length), BMP_HEADER)) {
-                return true;
-            }
-
+        } catch (RuntimeException | javax.imageio.IIOException e) {
             return false;
         }
+    }
+
+    /** Returns a format derived from the signature, for formats supported by ImageIO. */
+    public static String getImageFormat(File file) throws IOException {
+        byte[] header = new byte[8];
+        try (InputStream input = new FileInputStream(file)) {
+            if (input.read(header) < 8) return null;
+        }
+        if (Arrays.equals(Arrays.copyOfRange(header, 0, PNG_HEADER.length), PNG_HEADER)) return "png";
+        if (Arrays.equals(Arrays.copyOfRange(header, 0, JPEG_HEADER.length), JPEG_HEADER)) return "jpeg";
+        if (Arrays.equals(Arrays.copyOfRange(header, 0, BMP_HEADER.length), BMP_HEADER)) return "bmp";
+        return null;
     }
 
     /**

@@ -3,6 +3,7 @@ package com.dfsa.dto;
 import com.dfsa.model.AnalysisResult;
 
 import java.util.Date;
+import java.util.Map;
 
 public class AnalysisResultDTO {
 
@@ -13,6 +14,9 @@ public class AnalysisResultDTO {
     private String verdictExplanation;
     private String elaImageFileName; // We can use this to construct a URL for the ELA image
     private Date analyzedAt;
+    private Map<String, Object> metadataJson;
+    private Map<String, Object> tamperHeuristicsJson;
+    private String ocrText;
 
     // Getters and Setters
     public Long getId() {
@@ -70,4 +74,11 @@ public class AnalysisResultDTO {
     public void setAnalyzedAt(Date analyzedAt) {
         this.analyzedAt = analyzedAt;
     }
+
+    public Map<String, Object> getMetadataJson() { return metadataJson; }
+    public void setMetadataJson(Map<String, Object> metadataJson) { this.metadataJson = metadataJson; }
+    public Map<String, Object> getTamperHeuristicsJson() { return tamperHeuristicsJson; }
+    public void setTamperHeuristicsJson(Map<String, Object> tamperHeuristicsJson) { this.tamperHeuristicsJson = tamperHeuristicsJson; }
+    public String getOcrText() { return ocrText; }
+    public void setOcrText(String ocrText) { this.ocrText = ocrText; }
 }

@@ -126,4 +126,19 @@ CREATE TABLE IF NOT EXISTS login_attempts (
     timestamp TIMESTAMP NOT NULL
 ) ENGINE=InnoDB;
 
+-- Comparison results table
+CREATE TABLE IF NOT EXISTS comparison_results (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    reference_screenshot_id BIGINT NOT NULL,
+    target_screenshot_id BIGINT NOT NULL UNIQUE,
+    visual_difference_detected BOOLEAN,
+    changed_regions_details TEXT,
+    difference_map_file_name VARCHAR(255),
+    method_version VARCHAR(50),
+    limitations TEXT,
+    compared_at TIMESTAMP NOT NULL,
+    FOREIGN KEY (reference_screenshot_id) REFERENCES screenshots(id) ON DELETE CASCADE,
+    FOREIGN KEY (target_screenshot_id) REFERENCES screenshots(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
 SET FOREIGN_KEY_CHECKS = 1;

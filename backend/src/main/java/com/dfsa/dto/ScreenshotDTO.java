@@ -1,6 +1,7 @@
 package com.dfsa.dto;
 
 import com.dfsa.model.Screenshot;
+import com.dfsa.model.AnalysisResult;
 
 import java.util.Date;
 
@@ -18,6 +19,8 @@ public class ScreenshotDTO {
     private Date uploadedAt;
     private Date processedAt;
     private String errorMessage;
+    private AnalysisResult.AuthenticityVerdict verdict;
+    private Integer authenticityScore;
 
     // Getters and Setters
     public Long getId() {
@@ -114,5 +117,21 @@ public class ScreenshotDTO {
 
     public void setErrorMessage(String errorMessage) {
         this.errorMessage = errorMessage;
+    }
+
+    public AnalysisResult.AuthenticityVerdict getVerdict() {
+        return verdict;
+    }
+
+    public void setVerdict(AnalysisResult.AuthenticityVerdict verdict) {
+        this.verdict = verdict;
+    }
+
+    public Integer getAuthenticityScore() {
+        return authenticityScore;
+    }
+
+    public void setAuthenticityScore(Integer authenticityScore) {
+        this.authenticityScore = authenticityScore;
     }
 }

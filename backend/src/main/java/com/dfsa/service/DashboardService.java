@@ -61,13 +61,14 @@ public class DashboardService {
         verdictDistribution.put("AUTHENTIC", analysisResultRepository.countByVerdict(AnalysisResult.AuthenticityVerdict.AUTHENTIC));
         verdictDistribution.put("SUSPICIOUS", analysisResultRepository.countByVerdict(AnalysisResult.AuthenticityVerdict.SUSPICIOUS));
         verdictDistribution.put("LIKELY_TAMPERED", analysisResultRepository.countByVerdict(AnalysisResult.AuthenticityVerdict.LIKELY_TAMPERED));
+        verdictDistribution.put("INCONCLUSIVE", analysisResultRepository.countByVerdict(AnalysisResult.AuthenticityVerdict.INCONCLUSIVE));
         stats.setVerdictDistribution(verdictDistribution);
 
         // Uploads over time (last 30 days, grouped by day) - we'll simplify and just return the last 7 days for the line chart
         // We'll get the uploads per day for the last 7 days
         List<Object[]> uploadsOverTime = screenshotRepository.getUploadsPerDayLast7Days();
         List<ChartDataDTO> uploadsOverTimeList = uploadsOverTime.stream()
-                .map(row -> new ChartDataDTO((String) row[0], ((Number) row[1]).longValue()))
+                .map(row -> new ChartDataDTO(row[0].toString(), ((Number) row[1]).longValue()))
                 .collect(Collectors.toList());
         stats.setUploadsOverTime(uploadsOverTimeList);
 
