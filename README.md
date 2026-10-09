@@ -34,6 +34,20 @@ The application combines these checks into a reviewable analysis result, includi
 
 ---
 
+## System Architecture & Flow
+
+### High-Level Architecture
+![System Architecture](assets/architecture.png)
+
+### Core Analysis Class Diagram
+![Class Diagram](assets/class_diagram.png)
+
+### Execution Flowchart
+![Execution Flowchart](assets/flowchart.png)
+
+---
+
+
 ## Features
 
 - Register and sign in to the application with role-based access controls.
