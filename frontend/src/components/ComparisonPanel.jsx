@@ -30,7 +30,15 @@ export default function ComparisonPanel({ targetId }) {
 
   const loadExistingComparison = () => {
     axios.get(`/api/screenshots/${targetId}/comparison`, { withCredentials: true })
-      .then(res => setComparisonResult(res.data))
+      .then(res => {
+        const saved = res.data;
+        if (String(saved.targetScreenshot?.id) !== String(targetId) || !saved.referenceScreenshot?.id) {
+          setComparisonResult(null);
+          return;
+        }
+        setReferenceId(String(saved.referenceScreenshot.id));
+        setComparisonResult(saved);
+      })
       .catch(() => setComparisonResult(null)); // Not found is fine
   };
 
@@ -52,7 +60,7 @@ export default function ComparisonPanel({ targetId }) {
     <div className="card" style={{ marginBottom: 24, border: '1px solid var(--accent-blue)' }}>
       <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 12, color: 'var(--accent-blue)' }}>⚖️ Reference-Image Comparison</h3>
       <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 16 }}>
-        Select a verified original/reference screenshot from this case to compare against this target screenshot.
+        Select a reference screenshot from this same case to compare against this target screenshot.
         This will detect visual differences and changes in the decoded image content.
       </p>
       

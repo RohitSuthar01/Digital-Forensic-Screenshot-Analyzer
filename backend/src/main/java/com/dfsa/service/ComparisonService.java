@@ -3,6 +3,7 @@ package com.dfsa.service;
 import com.dfsa.model.ComparisonResult;
 import com.dfsa.model.Screenshot;
 import com.dfsa.repository.ComparisonResultRepository;
+import com.dfsa.repository.AnalysisResultRepository;
 import com.dfsa.repository.ScreenshotRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -10,8 +11,6 @@ import org.springframework.stereotype.Service;
 
 import javax.imageio.ImageIO;
 import java.awt.Color;
-import java.awt.Graphics2D;
-import java.awt.Image;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
@@ -25,6 +24,9 @@ public class ComparisonService {
 
     @Autowired
     private ComparisonResultRepository comparisonResultRepository;
+
+    @Autowired
+    private AnalysisResultRepository analysisResultRepository;
 
     @Autowired
     private ScreenshotRepository screenshotRepository;
@@ -57,30 +59,25 @@ public class ComparisonService {
             img1 = ImageIO.read(targetFile);
             img2 = ImageIO.read(referenceFile);
         } catch (IOException e) {
-            throw new IllegalArgumentException("Failed to read image files: " + e.getMessage());
+            throw new IllegalArgumentException("Failed to decode one or both stored images.");
         }
 
         if (img1 == null || img2 == null) {
             throw new IllegalArgumentException("Could not decode one or both images. They may be unsupported or corrupted.");
         }
 
+        if (img1.getWidth() != img2.getWidth() || img1.getHeight() != img2.getHeight()) {
+            throw new IllegalArgumentException(String.format(
+                    "Direct pixel comparison is unavailable because dimensions differ (target %d×%d, reference %d×%d). No resizing was performed.",
+                    img1.getWidth(), img1.getHeight(), img2.getWidth(), img2.getHeight()));
+        }
+
         ComparisonResult result = comparisonResultRepository.findByTargetScreenshotId(targetId).orElse(new ComparisonResult());
         result.setReferenceScreenshot(reference);
         result.setTargetScreenshot(target);
-        result.setMethodVersion("PixelDiff-1.0");
-        
-        String initialLimitations = "Simple pixel-wise comparison is sensitive to recompression/scaling shifts. Note: Never claim that the image with fewer differences or a higher score is certainly the original.";
-        
-        if (img1.getWidth() != img2.getWidth() || img1.getHeight() != img2.getHeight()) {
-            Image scaledImg1 = img1.getScaledInstance(img2.getWidth(), img2.getHeight(), Image.SCALE_SMOOTH);
-            BufferedImage newImg1 = new BufferedImage(img2.getWidth(), img2.getHeight(), BufferedImage.TYPE_INT_ARGB);
-            Graphics2D g2d = newImg1.createGraphics();
-            g2d.drawImage(scaledImg1, 0, 0, null);
-            g2d.dispose();
-            img1 = newImg1;
-            
-            initialLimitations = "Images had different dimensions. Target was automatically scaled to Reference dimensions for pixel-level differencing. This alignment is highly sensitive to scaling artifacts. Note: Never claim that the image with fewer differences or a higher score is certainly the original.";
-        }
+        result.setMethodVersion("ExactPixelDiff-1.1");
+        result.setDifferenceMapFileName(null);
+        String initialLimitations = "Exact-size decoded pixel comparison; recompression, color-profile, or format conversion can cause differences. A difference map locates differences but cannot determine which image is original or prove editing.";
 
         int width = img1.getWidth();
         int height = img1.getHeight();
@@ -123,8 +120,8 @@ public class ComparisonService {
         String imageA_Findings = "";
         String imageB_Findings = "";
         
-        java.util.Optional<com.dfsa.model.AnalysisResult> targetAnalysis = org.springframework.beans.factory.BeanFactoryUtils.beanOfTypeIncludingAncestors(org.springframework.web.context.ContextLoader.getCurrentWebApplicationContext(), com.dfsa.repository.AnalysisResultRepository.class).findByScreenshotId(targetId);
-        java.util.Optional<com.dfsa.model.AnalysisResult> refAnalysis = org.springframework.beans.factory.BeanFactoryUtils.beanOfTypeIncludingAncestors(org.springframework.web.context.ContextLoader.getCurrentWebApplicationContext(), com.dfsa.repository.AnalysisResultRepository.class).findByScreenshotId(referenceId);
+        java.util.Optional<com.dfsa.model.AnalysisResult> targetAnalysis = analysisResultRepository.findByScreenshotId(targetId);
+        java.util.Optional<com.dfsa.model.AnalysisResult> refAnalysis = analysisResultRepository.findByScreenshotId(referenceId);
         
         boolean targetSus = targetAnalysis.map(a -> a.getVerdict() == com.dfsa.model.AnalysisResult.AuthenticityVerdict.SUSPICIOUS || a.getVerdict() == com.dfsa.model.AnalysisResult.AuthenticityVerdict.LIKELY_TAMPERED).orElse(false);
         boolean refSus = refAnalysis.map(a -> a.getVerdict() == com.dfsa.model.AnalysisResult.AuthenticityVerdict.SUSPICIOUS || a.getVerdict() == com.dfsa.model.AnalysisResult.AuthenticityVerdict.LIKELY_TAMPERED).orElse(false);
@@ -140,7 +137,8 @@ public class ComparisonService {
 
         if (differenceDetected) {
             double percent = (diffPixels * 100.0) / (width * height);
-            result.setChangedRegionsDetails(String.format("Found %d visually different pixels (%.2f%% of image). %s", diffPixels, percent, comparisonStatement));
+            result.setChangedRegionsDetails(String.format("Target #%d (%d×%d) compared with reference #%d (%d×%d): %d of %d pixels differ above the 5-level channel threshold (%.2f%%). %s",
+                    targetId, width, height, referenceId, width, height, diffPixels, (long) width * height, percent, comparisonStatement));
             result.setLimitations(initialLimitations);
             
             String diffFileName = "diff_" + UUID.randomUUID().toString() + ".png";
@@ -148,7 +146,8 @@ public class ComparisonService {
             ImageIO.write(diffImg, "png", diffFile);
             result.setDifferenceMapFileName(diffFileName);
         } else {
-            result.setChangedRegionsDetails("No visual differences detected (0.00%). " + comparisonStatement);
+            result.setChangedRegionsDetails(String.format("Target #%d (%d×%d) compared with reference #%d (%d×%d): no pixels differ above the 5-level channel threshold (0.00%%). %s",
+                    targetId, width, height, referenceId, width, height, comparisonStatement));
             result.setLimitations(initialLimitations);
         }
 

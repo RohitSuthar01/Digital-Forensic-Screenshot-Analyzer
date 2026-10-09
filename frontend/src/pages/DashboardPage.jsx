@@ -4,7 +4,7 @@ import Sidebar from '../components/Sidebar';
 import { Link } from 'react-router-dom';
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 
-const PIE_COLORS = { AUTHENTIC: '#00E676', SUSPICIOUS: '#FFD740', LIKELY_TAMPERED: '#FF5252', UNKNOWN: '#94A3B8' };
+const PIE_COLORS = { AUTHENTIC: '#00E676', SUSPICIOUS: '#FFD740', LIKELY_TAMPERED: '#FF5252', INCONCLUSIVE: '#94A3B8', UNKNOWN: '#94A3B8' };
 
 const DashboardPage = () => {
   const [stats, setStats] = useState(null);

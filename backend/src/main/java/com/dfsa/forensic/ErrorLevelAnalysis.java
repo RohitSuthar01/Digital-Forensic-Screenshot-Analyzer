@@ -33,8 +33,9 @@ public class ErrorLevelAnalysis {
             throw new IOException("File not found: " + filePath);
         }
 
-        // We'll only perform ELA on JPEG images. For other formats, we can convert to JPEG in memory.
-        // We'll load the image and then save a temporary JPEG for the ELA process.
+        // ELA only evaluates JPEG recompression differences; converting another format
+        // to JPEG first would create a misleading visualization.
+        if (!"jpeg".equals(FileUtil.getImageFormat(file))) return null;
         BufferedImage originalImage = ImageIO.read(file);
         if (originalImage == null) {
             throw new IOException("Could not read image: " + filePath);
@@ -79,6 +80,9 @@ public class ErrorLevelAnalysis {
                     BufferedImage.TYPE_BYTE_GRAY);
 
             Graphics2D g = diffImage.createGraphics();
+
+            int[] histogram = new int[256];
+
             // We'll compute the absolute difference for each channel and then convert to grayscale
             for (int y = 0; y < originalImage.getHeight(); y++) {
                 for (int x = 0; x < originalImage.getWidth(); x++) {
@@ -97,15 +101,41 @@ public class ErrorLevelAnalysis {
                     int diffG = Math.abs(g1 - g2);
                     int diffB = Math.abs(b1 - b2);
 
-                    // Convert to grayscale (we can use the average or a weighted average)
+                    // Convert to grayscale
                     int gray = (diffR + diffG + diffB) / 3;
-                    // Enhance the difference by multiplying by a factor (e.g., 10) to make it visible
-                    int enhanced = Math.min(255, gray * 10);
-                    int grayRGB = (enhanced << 16) | (enhanced << 8) | enhanced;
+                    histogram[gray]++;
+                }
+            }
 
+            // Find 99th percentile for robust normalization
+            int totalPixels = originalImage.getWidth() * originalImage.getHeight();
+            int count = 0;
+            int p99 = 255;
+            for (int i = 0; i < 256; i++) {
+                count += histogram[i];
+                if (count >= totalPixels * 0.99) {
+                    p99 = i;
+                    break;
+                }
+            }
+
+            // Ensure we don't amplify tiny noise too much
+            if (p99 < 5) p99 = 5;
+            double scale = 255.0 / p99;
+
+            for (int y = 0; y < originalImage.getHeight(); y++) {
+                for (int x = 0; x < originalImage.getWidth(); x++) {
+                    int rgb1 = originalImage.getRGB(x, y);
+                    int rgb2 = recompressedImage.getRGB(x, y);
+                    int gray = (Math.abs(((rgb1 >> 16) & 0xFF) - ((rgb2 >> 16) & 0xFF))
+                            + Math.abs(((rgb1 >> 8) & 0xFF) - ((rgb2 >> 8) & 0xFF))
+                            + Math.abs((rgb1 & 0xFF) - (rgb2 & 0xFF))) / 3;
+                    int enhanced = (int) Math.min(255, gray * scale);
+                    int grayRGB = (enhanced << 16) | (enhanced << 8) | enhanced;
                     diffImage.setRGB(x, y, grayRGB);
                 }
             }
+
             g.dispose();
 
             // Save the ELA image to the upload directory

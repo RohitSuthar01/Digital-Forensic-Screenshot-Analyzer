@@ -16,6 +16,9 @@ public class AnalysisResultMapper {
         dto.setVerdictExplanation(analysisResult.getVerdictExplanation());
         dto.setElaImageFileName(analysisResult.getElaImageFileName());
         dto.setAnalyzedAt(analysisResult.getAnalyzedAt());
+        dto.setMetadataJson(analysisResult.getMetadataJson());
+        dto.setTamperHeuristicsJson(analysisResult.getTamperHeuristicsJson());
+        dto.setOcrText(analysisResult.getOcrText());
         return dto;
     }
 }

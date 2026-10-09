@@ -14,6 +14,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
 
 @Service
 public class MetadataAnalyzer {
@@ -33,6 +35,7 @@ public class MetadataAnalyzer {
         File file = new File(screenshot.getFilePath());
         if (!file.exists()) {
             result.put("error", "File not found");
+            result.put("metadataStatus", "FAILED");
             return result;
         }
 
@@ -44,11 +47,11 @@ public class MetadataAnalyzer {
                     Map<String, String> tagInfo = new HashMap<>();
                     tagInfo.put("directory", directory.getName());
                     tagInfo.put("tag", tag.getTagName());
-                    tagInfo.put("description", tag.getDescription());
+                    tagInfo.put("description", tag.getDescription() == null ? "" : tag.getDescription());
                     metadataList.add(tagInfo);
 
                     // Check for known editing software signatures
-                    String desc = tag.getDescription().toLowerCase();
+                    String desc = tag.getDescription() == null ? "" : tag.getDescription().toLowerCase(java.util.Locale.ROOT);
                     if (desc.contains("photoshop") ||
                             desc.contains("gimp") ||
                             desc.contains("canva") ||
@@ -61,11 +64,25 @@ public class MetadataAnalyzer {
                 }
             }
         } catch (ImageProcessingException | IOException e) {
-            result.put("error", "Failed to read metadata: " + e.getMessage());
-            return result;
+            // A valid image may have no supported metadata; report a module result,
+            // rather than failing independent forensic modules.
+            result.put("metadataStatus", "UNAVAILABLE");
+            result.put("metadataMessage", "Metadata could not be extracted from this image format.");
         }
 
+        try {
+            BufferedImage image = ImageIO.read(file);
+            if (image != null) {
+                result.put("width", image.getWidth());
+                result.put("height", image.getHeight());
+                result.put("format", com.dfsa.util.FileUtil.getImageFormat(file));
+            }
+        } catch (IOException e) {
+            result.put("imagePropertiesStatus", "UNAVAILABLE");
+        }
         result.put("metadata", metadataList);
+        result.put("metadataStatus", metadataList.isEmpty() ? "UNAVAILABLE" : "AVAILABLE");
+        if (metadataList.isEmpty()) result.put("metadataMessage", "No supported metadata was present; this alone is not evidence of editing.");
         result.put("hasEditingSoftware", hasEditingSoftware);
         result.put("editingSoftwareSignatures", editingSoftwareSignatures);
         result.put("metadataCount", metadataList.size());

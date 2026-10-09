@@ -4,7 +4,7 @@ import { useParams, Link } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
 
 const statusBadge = { PENDING: 'badge-amber', PROCESSING: 'badge-cyan', COMPLETED: 'badge-green', FAILED: 'badge-red' };
-const verdictBadge = { AUTHENTIC: 'badge-green', SUSPICIOUS: 'badge-amber', LIKELY_TAMPERED: 'badge-red' };
+const verdictBadge = { AUTHENTIC: 'badge-green', SUSPICIOUS: 'badge-amber', LIKELY_TAMPERED: 'badge-red', INCONCLUSIVE: 'badge-blue' };
 
 const CaseDetailPage = () => {
   const { id } = useParams();
@@ -164,18 +164,27 @@ const CaseDetailPage = () => {
                                 <div className="alert alert-error">{expandedResults[ss.id].error}</div>
                               ) : (
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                                  <div style={{ display: 'flex', gap: 24, alignItems: 'center' }}>
-                                    <div style={{ flex: 1, padding: 16, background: 'var(--bg-card)', borderRadius: 8 }}>
-                                      <h4 style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 8, textTransform: 'uppercase' }}>Verdict Explanation</h4>
-                                      <p style={{ fontSize: 14 }}>{expandedResults[ss.id].data.verdictExplanation}</p>
-                                    </div>
-                                    {expandedResults[ss.id].data.elaImageFileName && (
+                                    <div style={{ display: 'flex', gap: 24, alignItems: 'center' }}>
                                       <div style={{ flex: 1, padding: 16, background: 'var(--bg-card)', borderRadius: 8 }}>
-                                        <h4 style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 8, textTransform: 'uppercase' }}>ELA Preview</h4>
-                                        <img src={`/api/screenshots/${ss.id}/ela`} alt="ELA" style={{ maxWidth: '100%', borderRadius: 4, maxHeight: 120, objectFit: 'contain' }} />
+                                        <h4 style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 8, textTransform: 'uppercase' }}>Verdict Explanation</h4>
+                                        <p style={{ fontSize: 14 }}>{expandedResults[ss.id].data.verdictExplanation}</p>
                                       </div>
-                                    )}
-                                  </div>
+                                      <div style={{ flex: 1, padding: 16, background: 'var(--bg-card)', borderRadius: 8 }}>
+                                        <h4 style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 8, textTransform: 'uppercase' }}>Original</h4>
+                                        <img src={`/api/screenshots/${ss.id}/file`} alt="Original" style={{ maxWidth: '100%', borderRadius: 4, maxHeight: 120, objectFit: 'contain' }} onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'block'; }} />
+                                        <div style={{ display: 'none', color: 'var(--text-muted)', fontSize: 12 }}>Image unavailable</div>
+                                      </div>
+                                      {expandedResults[ss.id].data.elaImageFileName && (
+                                        <div style={{ flex: 1, padding: 16, background: 'var(--bg-card)', borderRadius: 8 }}>
+                                          <h4 style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 8, textTransform: 'uppercase' }}>ELA Visualization</h4>
+                                          <p style={{ fontSize: 12, color: 'var(--text-secondary)', marginBottom: 8, lineHeight: 1.4 }}>
+                                            <strong>Legend:</strong> Brighter pixels = larger recompression differences. Do not confirm tampering on this alone.
+                                          </p>
+                                          <img src={`/api/screenshots/${ss.id}/ela-image`} alt="ELA" style={{ maxWidth: '100%', borderRadius: 4, maxHeight: 120, objectFit: 'contain' }} onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'block'; }} />
+                                          <div style={{ display: 'none', color: 'var(--text-muted)', fontSize: 12 }}>ELA unavailable or non-JPEG</div>
+                                        </div>
+                                      )}
+                                    </div>
                                   <div style={{ display: 'flex', gap: 8 }}>
                                     <Link to={`/analysis/${ss.id}`} className="btn btn-secondary btn-sm">View Full Details</Link>
                                   </div>

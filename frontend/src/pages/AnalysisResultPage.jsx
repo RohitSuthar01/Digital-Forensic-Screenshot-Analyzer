@@ -15,6 +15,7 @@ const verdictConfig = {
 const AnalysisResultPage = () => {
   const { screenshotId } = useParams();
   const [result, setResult] = useState(null);
+  const [screenshot, setScreenshot] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -23,6 +24,9 @@ const AnalysisResultPage = () => {
       .then(r => setResult(r.data))
       .catch(() => setError('Failed to load analysis result.'))
       .finally(() => setLoading(false));
+    axios.get(`/api/screenshots/${screenshotId}`, { withCredentials: true })
+      .then(r => setScreenshot(r.data))
+      .catch(() => setScreenshot(null));
   }, [screenshotId]);
 
   const score = result?.authenticityScore ?? 0;
@@ -92,15 +96,38 @@ const AnalysisResultPage = () => {
                 elaSrc={result.elaImageFileName ? `/api/screenshots/${screenshotId}/ela-image` : null} 
               />
 
+              <div className="card" style={{ marginBottom: 24 }}>
+                <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 12 }}>Evidence integrity and module status</h3>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(220px,1fr))', gap: 10, fontSize: 13 }}>
+                  <div><strong>SHA-256:</strong> <code style={{ wordBreak: 'break-all' }}>{screenshot?.sha256 || 'Unavailable'}</code></div>
+                  <div><strong>MD5:</strong> <code style={{ wordBreak: 'break-all' }}>{screenshot?.md5 || 'Unavailable'}</code></div>
+                  <div><strong>ELA:</strong> {result.elaImageFileName ? 'Completed (visual review only)' : (result.tamperHeuristicsJson?.moduleStatuses?.ela === 'NOT_APPLICABLE' ? 'Not applicable to this image format' : 'Unavailable; see module status')}</div>
+                  <div><strong>Metadata:</strong> {result.metadataJson?.metadataStatus || 'Unavailable'}</div>
+                </div>
+                {result.tamperHeuristicsJson?.moduleStatuses && (
+                  <div style={{ marginTop: 14, display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                    {Object.entries(result.tamperHeuristicsJson.moduleStatuses).map(([name, status]) => (
+                      <span key={name} className="badge badge-cyan">{name}: {status}</span>
+                    ))}
+                  </div>
+                )}
+                {result.tamperHeuristicsJson?.limitation && (
+                  <p style={{ margin: '10px 0 0', color: 'var(--text-secondary)', fontSize: 12 }}>{result.tamperHeuristicsJson.limitation}</p>
+                )}
+                <p style={{ margin: '14px 0 0', color: 'var(--text-muted)', fontSize: 12 }}>
+                  The score and metadata are screening indicators. They cannot prove that an image is authentic or identify the original without a trusted reference.
+                </p>
+              </div>
+
               {/* Metadata */}
               {result.metadataJson && Object.keys(result.metadataJson).length > 0 && (
                 <div className="card" style={{ marginBottom: 24 }}>
-                  <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 16 }}>📄 EXIF Metadata</h3>
+                  <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 16 }}>📄 Extracted image metadata</h3>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(280px,1fr))', gap: 8 }}>
                     {Object.entries(result.metadataJson).map(([k, v]) => (
                       <div key={k} style={{ display: 'flex', gap: 12, padding: '8px 12px', background: 'rgba(255,255,255,0.03)', borderRadius: 8 }}>
                         <span style={{ fontSize: 12, color: 'var(--text-muted)', minWidth: 100 }}>{k}</span>
-                        <span style={{ fontSize: 13, fontFamily: 'JetBrains Mono, monospace', wordBreak: 'break-all' }}>{String(v)}</span>
+                        <span style={{ fontSize: 13, fontFamily: 'JetBrains Mono, monospace', wordBreak: 'break-all' }}>{typeof v === 'object' ? JSON.stringify(v) : String(v)}</span>
                       </div>
                     ))}
                   </div>
