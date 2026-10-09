@@ -4,6 +4,7 @@ import ImageInspector from './ImageInspector';
 
 export default function ComparisonPanel({ targetId }) {
   const [caseScreenshots, setCaseScreenshots] = useState([]);
+  const [targetEvidence, setTargetEvidence] = useState(null);
   const [referenceId, setReferenceId] = useState('');
   const [comparisonResult, setComparisonResult] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -13,6 +14,7 @@ export default function ComparisonPanel({ targetId }) {
   useEffect(() => {
     axios.get(`/api/screenshots/${targetId}`, { withCredentials: true })
       .then(res => {
+        setTargetEvidence(res.data);
         const caseId = res.data.caseId;
         return axios.get(`/api/screenshots/case/${caseId}`, { withCredentials: true });
       })
@@ -41,6 +43,8 @@ export default function ComparisonPanel({ targetId }) {
       })
       .catch(() => setComparisonResult(null)); // Not found is fine
   };
+
+  const selectedReference = caseScreenshots.find(s => String(s.id) === String(referenceId));
 
   const handleCompare = () => {
     if (!referenceId) return;
@@ -89,6 +93,21 @@ export default function ComparisonPanel({ targetId }) {
           {loading ? 'Comparing...' : 'Run Comparison'}
         </button>
       </div>
+
+      {referenceId && selectedReference && (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(260px,1fr))', gap: 12, marginBottom: 16, fontSize: 12 }}>
+          {[{ label: `Target #${targetId}`, evidence: targetEvidence }, { label: `Reference #${referenceId}`, evidence: selectedReference }].map(item => (
+            <div key={item.label} style={{ padding: 12, background: 'rgba(255,255,255,0.03)', borderRadius: 8 }}>
+              <strong>{item.label} file fingerprints</strong>
+              <div style={{ marginTop: 6 }}>MD5: <code style={{ wordBreak: 'break-all' }}>{item.evidence?.md5 || 'Unavailable'}</code></div>
+              <div style={{ marginTop: 4 }}>SHA-256: <code style={{ wordBreak: 'break-all' }}>{item.evidence?.sha256 || 'Unavailable'}</code></div>
+            </div>
+          ))}
+          <div style={{ gridColumn: '1 / -1', color: 'var(--text-muted)' }}>
+            Matching SHA-256 fingerprints mean the stored files are byte-for-byte identical. Different hashes only mean the file bytes differ; the pixel comparison below checks visual content separately.
+          </div>
+        </div>
+      )}
 
       {error && <div className="alert alert-error" style={{ marginBottom: 16 }}>{error}</div>}
 

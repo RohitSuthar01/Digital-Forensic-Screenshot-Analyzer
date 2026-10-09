@@ -33,6 +33,9 @@ public class AnalysisService {
     private MetadataAnalyzer metadataAnalyzer;
 
     @Autowired
+    private LsbSteganographyAnalyzer lsbSteganographyAnalyzer;
+
+    @Autowired
     private ErrorLevelAnalysis errorLevelAnalysis;
 
     @Autowired
@@ -70,10 +73,24 @@ public class AnalysisService {
             // 2. Metadata analysis
             Map<String, Object> metadataResult = metadataAnalyzer.analyze(screenshot);
 
+            // 2a. Search common sequential LSB channel patterns for readable text.
+            Map<String, Object> lsbResult;
+            try {
+                lsbResult = lsbSteganographyAnalyzer.analyze(new java.io.File(screenshot.getFilePath()));
+            } catch (RuntimeException e) {
+                lsbResult = new HashMap<>();
+                lsbResult.put("status", "FAILED");
+                lsbResult.put("messageDetected", false);
+                lsbResult.put("reason", "LSB analysis failed; no conclusion was made.");
+                lsbResult.put("limitation", "LSB scanning only covers common sequential readable-text patterns.");
+            }
+            metadataResult.put("lsbSteganography", lsbResult);
+
             // 3. Error Level Analysis (if applicable)
             String elaImageFileName = null;
             Map<String, Object> moduleStatuses = new LinkedHashMap<>();
             moduleStatuses.put("metadata", metadataResult.getOrDefault("metadataStatus", "UNAVAILABLE"));
+            moduleStatuses.put("lsbSteganography", lsbResult.getOrDefault("status", "UNAVAILABLE"));
             try {
                 elaImageFileName = errorLevelAnalysis.analyze(screenshot);
                 moduleStatuses.put("ela", elaImageFileName == null ? "NOT_APPLICABLE" : "COMPLETED");
@@ -123,10 +140,6 @@ public class AnalysisService {
             analysisResult.setMetadataJson(metadataResult);
             analysisResult.setTamperHeuristicsJson(tamperResult);
             analysisResult.setOcrText(ocrResult.get("ocr_text") instanceof String text ? text : null);
-
-            // We can store the detailed results as JSON in the analysis_results table if we want to keep them for debugging.
-            // For now, we'll just store the summary. We can add JSON columns later if needed.
-            // For the purpose of this task, we'll leave the JSON columns as null and focus on the score and verdict.
 
             analysisResultRepository.save(analysisResult);
 

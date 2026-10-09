@@ -16,6 +16,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Optional;
 
@@ -66,7 +67,32 @@ class ComparisonServiceTest {
         assertTrue(result.getChangedRegionsDetails().contains("Target #1 (2×2)"));
         assertTrue(result.getChangedRegionsDetails().contains("reference #2 (2×2)"));
         assertTrue(result.getChangedRegionsDetails().contains("100.00%"));
+        assertTrue(result.getChangedRegionsDetails().contains("MD5 DIFFERENT"));
+        assertTrue(result.getChangedRegionsDetails().contains("SHA-256 DIFFERENT"));
         assertNotNull(result.getDifferenceMapFileName());
+    }
+
+    @Test
+    void reportsMatchingHashesAndNoPixelDifferenceForByteIdenticalFiles() throws Exception {
+        Screenshot target = screenshot(3L, 10L, "same-target.png");
+        Screenshot reference = screenshot(4L, 10L, "same-reference.png");
+        writeImage("same-target.png", 3, 3, 0xFF336699);
+        Files.copy(tempDir.resolve("same-target.png"), tempDir.resolve("same-reference.png"));
+        when(screenshotRepository.findById(3L)).thenReturn(Optional.of(target));
+        when(screenshotRepository.findById(4L)).thenReturn(Optional.of(reference));
+        when(comparisonRepository.findByTargetScreenshotId(3L)).thenReturn(Optional.empty());
+        when(analysisRepository.findByScreenshotId(anyLong())).thenReturn(Optional.empty());
+        when(comparisonRepository.save(any(ComparisonResult.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        ReflectionTestUtils.setField(service, "uploadDir", tempDir.toString());
+
+        ComparisonResult result = service.compare(3L, 4L);
+
+        assertFalse(result.isVisualDifferenceDetected());
+        assertNull(result.getDifferenceMapFileName());
+        assertTrue(result.getChangedRegionsDetails().contains("MD5 SAME"));
+        assertTrue(result.getChangedRegionsDetails().contains("SHA-256 SAME"));
+        assertTrue(result.getChangedRegionsDetails().contains("byte-for-byte identical"));
+        assertTrue(result.getChangedRegionsDetails().contains("no pixels differ"));
     }
 
     private Screenshot screenshot(long id, long caseId, String name) {

@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.Map;
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
+import java.awt.image.ColorModel;
 
 @Service
 public class MetadataAnalyzer {
@@ -75,7 +76,18 @@ public class MetadataAnalyzer {
             if (image != null) {
                 result.put("width", image.getWidth());
                 result.put("height", image.getHeight());
+                result.put("resolution", image.getWidth() + " × " + image.getHeight() + " pixels");
                 result.put("format", com.dfsa.util.FileUtil.getImageFormat(file));
+                ColorModel colorModel = image.getColorModel();
+                String colorMode;
+                if (colorModel instanceof java.awt.image.IndexColorModel) {
+                    colorMode = "Indexed color";
+                } else if (colorModel.getNumColorComponents() == 1) {
+                    colorMode = colorModel.hasAlpha() ? "Grayscale + alpha" : "Grayscale";
+                } else {
+                    colorMode = colorModel.hasAlpha() ? "RGBA" : "RGB";
+                }
+                result.put("colorMode", colorMode);
             }
         } catch (IOException e) {
             result.put("imagePropertiesStatus", "UNAVAILABLE");

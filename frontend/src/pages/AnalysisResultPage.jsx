@@ -119,6 +119,30 @@ const AnalysisResultPage = () => {
                 </p>
               </div>
 
+              {result.metadataJson && (
+                <div className="card" style={{ marginBottom: 24 }}>
+                  <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 12 }}>🖼️ Image properties</h3>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(180px,1fr))', gap: 12, fontSize: 13 }}>
+                    <div><strong>Format:</strong> {result.metadataJson.format || 'Unavailable'}</div>
+                    <div><strong>Color mode:</strong> {result.metadataJson.colorMode || 'Unavailable'}</div>
+                    <div><strong>Resolution:</strong> {result.metadataJson.resolution || (result.metadataJson.width && result.metadataJson.height ? `${result.metadataJson.width} × ${result.metadataJson.height} pixels` : 'Unavailable')}</div>
+                  </div>
+                  <p style={{ margin: '10px 0 0', color: 'var(--text-muted)', fontSize: 12 }}>Color mode describes the decoded image representation reported by the image library.</p>
+                </div>
+              )}
+
+              {result.metadataJson?.lsbSteganography && (
+                <div className="card" style={{ marginBottom: 24 }}>
+                  <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 10 }}>🕵️ LSB steganography screening</h3>
+                  <div style={{ marginBottom: 8 }}><span className="badge badge-cyan">{result.metadataJson.lsbSteganography.status || 'UNKNOWN'}</span> {result.metadataJson.lsbSteganography.channelPattern && <span style={{ marginLeft: 8 }}>Pattern: {result.metadataJson.lsbSteganography.channelPattern}</span>}</div>
+                  <p style={{ fontSize: 13, marginBottom: 8 }}>{result.metadataJson.lsbSteganography.finding || result.metadataJson.lsbSteganography.reason || 'No LSB finding available.'}</p>
+                  {result.metadataJson.lsbSteganography.extractedText && (
+                    <pre style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', background: 'rgba(0,0,0,0.2)', padding: 12, borderRadius: 8, fontSize: 13 }}>{result.metadataJson.lsbSteganography.extractedText}</pre>
+                  )}
+                  {result.metadataJson.lsbSteganography.limitation && <p style={{ color: 'var(--text-muted)', fontSize: 12, marginBottom: 0 }}>{result.metadataJson.lsbSteganography.limitation}</p>}
+                </div>
+              )}
+
               {/* Metadata */}
               {result.metadataJson && Object.keys(result.metadataJson).length > 0 && (
                 <div className="card" style={{ marginBottom: 24 }}>

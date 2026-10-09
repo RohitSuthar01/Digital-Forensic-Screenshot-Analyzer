@@ -5,6 +5,7 @@ import com.dfsa.model.Screenshot;
 import com.dfsa.repository.ComparisonResultRepository;
 import com.dfsa.repository.AnalysisResultRepository;
 import com.dfsa.repository.ScreenshotRepository;
+import com.dfsa.util.FileUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -53,6 +54,20 @@ public class ComparisonService {
             throw new IllegalArgumentException("One or both screenshot files are missing from storage");
         }
 
+        String targetMd5 = FileUtil.getMD5Checksum(targetFile);
+        String referenceMd5 = FileUtil.getMD5Checksum(referenceFile);
+        String targetSha256 = FileUtil.getSHA256Checksum(targetFile);
+        String referenceSha256 = FileUtil.getSHA256Checksum(referenceFile);
+        boolean sameMd5 = targetMd5.equalsIgnoreCase(referenceMd5);
+        boolean sameSha256 = targetSha256.equalsIgnoreCase(referenceSha256);
+        String hashSummary = String.format(
+                "File fingerprints (recomputed from stored evidence): target #%d MD5 %s, SHA-256 %s; reference #%d MD5 %s, SHA-256 %s. Hash match: MD5 %s, SHA-256 %s. %s",
+                targetId, targetMd5, targetSha256, referenceId, referenceMd5, referenceSha256,
+                sameMd5 ? "SAME" : "DIFFERENT", sameSha256 ? "SAME" : "DIFFERENT",
+                sameSha256
+                        ? "The files are byte-for-byte identical according to SHA-256."
+                        : "Different hashes mean the file bytes differ; that alone does not show that either image was edited.");
+
         BufferedImage img1;
         BufferedImage img2;
         try {
@@ -75,7 +90,7 @@ public class ComparisonService {
         ComparisonResult result = comparisonResultRepository.findByTargetScreenshotId(targetId).orElse(new ComparisonResult());
         result.setReferenceScreenshot(reference);
         result.setTargetScreenshot(target);
-        result.setMethodVersion("ExactPixelDiff-1.1");
+        result.setMethodVersion("ExactPixelDiff-1.2+MD5+SHA256");
         result.setDifferenceMapFileName(null);
         String initialLimitations = "Exact-size decoded pixel comparison; recompression, color-profile, or format conversion can cause differences. A difference map locates differences but cannot determine which image is original or prove editing.";
 
@@ -138,7 +153,8 @@ public class ComparisonService {
         if (differenceDetected) {
             double percent = (diffPixels * 100.0) / (width * height);
             result.setChangedRegionsDetails(String.format("Target #%d (%d×%d) compared with reference #%d (%d×%d): %d of %d pixels differ above the 5-level channel threshold (%.2f%%). %s",
-                    targetId, width, height, referenceId, width, height, diffPixels, (long) width * height, percent, comparisonStatement));
+                    targetId, width, height, referenceId, width, height, diffPixels, (long) width * height, percent, comparisonStatement)
+                    + " " + hashSummary);
             result.setLimitations(initialLimitations);
             
             String diffFileName = "diff_" + UUID.randomUUID().toString() + ".png";
@@ -147,7 +163,9 @@ public class ComparisonService {
             result.setDifferenceMapFileName(diffFileName);
         } else {
             result.setChangedRegionsDetails(String.format("Target #%d (%d×%d) compared with reference #%d (%d×%d): no pixels differ above the 5-level channel threshold (0.00%%). %s",
-                    targetId, width, height, referenceId, width, height, comparisonStatement));
+                    targetId, width, height, referenceId, width, height, comparisonStatement)
+                    + " " + hashSummary
+                    + (sameSha256 ? "" : " Decoded pixels match within the configured channel threshold, even though the file hashes differ; metadata, encoding, or tiny pixel changes may explain this."));
             result.setLimitations(initialLimitations);
         }
 
