@@ -6,8 +6,8 @@ An evidence-oriented web application for analyzing screenshots, reviewing forens
 
 ## Project Administration
 
-**Project Guide:** [Add guide name]  
-**Project Type:** Academic team project  
+**Project Guide:** [Er. Ram Babu Buri]  
+**Project Type:** Academic Project Based Learning.  
 **Repository:** [Digital-Forensic-Screenshot-Analyzer](https://github.com/RohitSuthar01/Digital-Forensic-Screenshot-Analyzer)
 
 ### Team Members and Responsibilities
@@ -17,10 +17,10 @@ The roles below describe the team's planned work distribution. They are not a cl
 | Member | Assigned role / module | Email | Mobile |
 | :--- | :--- | :--- | :--- |
 | Rohit Suthar (Team Lead) | Backend integration, authentication/security coordination, case workflow, and repository integration | rohitsutharrr@gmail.com | 7426033714 |
-| Ritika Sharma | Frontend UI/UX, React pages, responsive layouts, and API integration | ritikasharmapinjor@gmail.com | 91382 66159 |
-| Ronak Thadani | Case/database workflow, data model coordination, and persistence support | thadanir8@gmail.com | 80003 87244 |
-| Tanishk | Forensic analysis module: metadata, hashing, ELA, OCR, and steganography screening | tanishk.99s99@gmail.com | 94611 16756 |
-| Rishi | Quality assurance, workflow verification, test cases, and report review | Not provided | 84410 00770 |
+| Ritika Sharma | Frontend UI/UX, React pages, responsive layouts, and API integration | ritikasharmapinjor@gmail.com | 9138266159 |
+| Ronak Thadani | Case/database workflow, data model coordination, and persistence support | thadanir8@gmail.com | 8000387244 |
+| Tanishk | Forensic analysis module: metadata, hashing, ELA, OCR, and steganography screening | tanishk.99s99@gmail.com | 9461116756 |
+| Rishi | Quality assurance, workflow verification, test cases, and report review | Not provided | 8441000770 |
 
 ---
 
