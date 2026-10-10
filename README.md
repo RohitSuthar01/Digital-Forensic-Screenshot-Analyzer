@@ -20,7 +20,7 @@ The roles below describe the team's planned work distribution. They are not a cl
 | Ritika Sharma | Frontend UI/UX, React pages, responsive layouts, and API integration | ritikasharmapinjor@gmail.com | 9138266159 |
 | Ronak Thadani | Case/database workflow, data model coordination, and persistence support | thadanir8@gmail.com | 8000387244 |
 | Tanishk | Forensic analysis module: metadata, hashing, ELA, OCR, and steganography screening | tanishk.99s99@gmail.com | 9461116756 |
-| Rishi | Quality assurance, workflow verification, test cases, and report review | Not provided | 8441000770 |
+| Rishi | Quality assurance, workflow verification, test cases, and report review | rishijoshibkn@gmail.com | 8441000770 |
 
 ---
 
