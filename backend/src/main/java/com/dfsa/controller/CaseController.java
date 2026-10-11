@@ -12,6 +12,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -22,7 +25,6 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/cases")
-@CrossOrigin(origins = {"http://localhost:5173", "http://localhost:5188"}, allowCredentials = "true")
 public class CaseController {
 
     @Autowired
@@ -97,19 +99,26 @@ public class CaseController {
 
     // Get all screenshots for a case
     @GetMapping("/{id}/screenshots")
-    public ResponseEntity<List<ScreenshotDTO>> getScreenshotsForCase(@PathVariable("id") Long id) {
-        List<ScreenshotDTO> screenshots = screenshotService.getScreenshotsByCaseId(id);
+    public ResponseEntity<List<ScreenshotDTO>> getScreenshotsForCase(@PathVariable("id") Long id,
+            @AuthenticationPrincipal UserDetailsImpl principal) {
+        boolean admin = principal.getAuthorities().stream().anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority()));
+        List<ScreenshotDTO> screenshots = screenshotService.getScreenshotsByCaseId(id, principal.getId(), admin);
         return ResponseEntity.ok(screenshots);
     }
 
     // Upload a screenshot for a case
     @PostMapping("/{id}/screenshots")
+    @PreAuthorize("hasRole('INVESTIGATOR') or hasRole('ADMIN')")
     public ResponseEntity<?> uploadScreenshotForCase(
             @PathVariable("id") Long id,
-            @RequestParam("file") MultipartFile file) {
+            @RequestParam("file") MultipartFile file,
+            @AuthenticationPrincipal UserDetailsImpl principal) {
         try {
-            ScreenshotDTO dto = screenshotService.uploadScreenshot(id, file);
+            boolean admin = principal.getAuthorities().stream().anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority()));
+            ScreenshotDTO dto = screenshotService.uploadScreenshot(id, file, principal.getId(), admin);
             return new ResponseEntity<>(dto, HttpStatus.CREATED);
+        } catch (AccessDeniedException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
         } catch (IOException | NoSuchAlgorithmException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Error uploading file: " + e.getMessage());

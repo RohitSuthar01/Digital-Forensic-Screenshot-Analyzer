@@ -35,6 +35,58 @@ public class DashboardService {
      *
      * @return a DTO containing various statistics for the dashboard
      */
+    public DashboardStatsDTO getDashboardStats(Long userId, boolean admin) {
+        if (admin) return getDashboardStats();
+
+        DashboardStatsDTO stats = new DashboardStatsDTO();
+        List<Case> cases = caseRepository.findByInvestigatorId(userId);
+        List<Screenshot> screenshots = screenshotRepository.findByTheCase_Investigator_Id(userId);
+        List<Long> screenshotIds = screenshots.stream().map(Screenshot::getId).filter(Objects::nonNull).toList();
+        List<AnalysisResult> results = screenshotIds.isEmpty()
+                ? List.of() : analysisResultRepository.findByScreenshot_IdIn(screenshotIds);
+
+        stats.setTotalCases(cases.size());
+        stats.setTotalScreenshots(screenshots.size());
+        stats.setTotalScreenshotsAnalyzed(results.size());
+        stats.setTotalTamperedDetected(results.stream()
+                .filter(result -> result.getVerdict() == AnalysisResult.AuthenticityVerdict.LIKELY_TAMPERED).count());
+        stats.setPendingAnalyses(screenshots.stream()
+                .filter(screenshot -> screenshot.getStatus() == Screenshot.Status.PENDING
+                        || screenshot.getStatus() == Screenshot.Status.PROCESSING).count());
+
+        Map<String, Long> verdicts = new HashMap<>();
+        for (AnalysisResult.AuthenticityVerdict verdict : AnalysisResult.AuthenticityVerdict.values()) {
+            verdicts.put(verdict.name(), results.stream().filter(result -> result.getVerdict() == verdict).count());
+        }
+        stats.setVerdictDistribution(verdicts);
+
+        java.time.LocalDate today = java.time.LocalDate.now();
+        Map<java.time.LocalDate, Long> uploadsByDate = new TreeMap<>();
+        screenshots.stream().map(Screenshot::getUploadedAt).filter(Objects::nonNull)
+                .map(date -> date.toInstant().atZone(java.time.ZoneId.systemDefault()).toLocalDate())
+                .filter(date -> !date.isBefore(today.minusDays(7)) && !date.isAfter(today))
+                .forEach(date -> uploadsByDate.merge(date, 1L, Long::sum));
+        stats.setUploadsOverTime(uploadsByDate.entrySet().stream()
+                .map(entry -> new ChartDataDTO(entry.getKey().toString(), entry.getValue())).toList());
+
+        Map<String, Long> priorities = new HashMap<>();
+        for (Case.Priority priority : Case.Priority.values()) {
+            priorities.put(priority.name(), cases.stream().filter(item -> item.getPriority() == priority).count());
+        }
+        stats.setCasesByPriority(priorities);
+
+        List<ActivityDTO> activity = auditLogRepository.findByUserId(userId).stream()
+                .sorted(Comparator.comparing(AuditLog::getTimestamp,
+                        Comparator.nullsLast(Comparator.reverseOrder())))
+                .limit(10)
+                .map(log -> new ActivityDTO(log.getId(), log.getAction(), log.getEntityType(), log.getEntityId(),
+                        log.getDescription(), log.getUser() != null ? log.getUser().getUsername() : "System",
+                        log.getTimestamp()))
+                .toList();
+        stats.setRecentActivity(activity);
+        return stats;
+    }
+
     public DashboardStatsDTO getDashboardStats() {
         DashboardStatsDTO stats = new DashboardStatsDTO();
 

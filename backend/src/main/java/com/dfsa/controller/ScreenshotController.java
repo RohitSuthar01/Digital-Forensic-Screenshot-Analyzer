@@ -5,6 +5,7 @@ import com.dfsa.dto.ScreenshotDTO;
 import com.dfsa.model.Screenshot;
 import com.dfsa.service.AnalysisService;
 import com.dfsa.service.ScreenshotService;
+import com.dfsa.security.UserDetailsImpl;
 import jakarta.validation.constraints.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -15,6 +16,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -25,7 +28,6 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/screenshots")
-@CrossOrigin(origins = {"http://localhost:5173", "http://localhost:5188"}, allowCredentials = "true")
 public class ScreenshotController {
 
     @Autowired
@@ -37,6 +39,9 @@ public class ScreenshotController {
     @Autowired
     private com.dfsa.service.ComparisonService comparisonService;
 
+    @Autowired
+    private com.dfsa.service.CaseAccessService caseAccessService;
+
     @Value("${screenshot.upload.dir}")
     private String uploadDir;
 
@@ -45,10 +50,13 @@ public class ScreenshotController {
     @PreAuthorize("hasRole('INVESTIGATOR') or hasRole('ADMIN')")
     public ResponseEntity<?> uploadScreenshot(
             @PathVariable("caseId") Long caseId,
-            @RequestParam("file") MultipartFile file) {
+            @RequestParam("file") MultipartFile file,
+            @AuthenticationPrincipal UserDetailsImpl principal) {
         try {
-            ScreenshotDTO dto = screenshotService.uploadScreenshot(caseId, file);
+            ScreenshotDTO dto = screenshotService.uploadScreenshot(caseId, file, principal.getId(), isAdmin(principal));
             return new ResponseEntity<>(dto, HttpStatus.CREATED);
+        } catch (AccessDeniedException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
         } catch (IOException | java.security.NoSuchAlgorithmException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Error uploading file: " + e.getMessage());
@@ -61,9 +69,10 @@ public class ScreenshotController {
     // Get screenshot file by ID (to serve the image or file)
     @GetMapping("/{id}/file")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<Resource> getScreenshotFile(@PathVariable("id") Long id) {
+    public ResponseEntity<Resource> getScreenshotFile(@PathVariable("id") Long id,
+            @AuthenticationPrincipal UserDetailsImpl principal) {
         try {
-            Resource file = screenshotService.getScreenshotFile(id);
+            Resource file = screenshotService.getScreenshotFile(id, principal.getId(), isAdmin(principal));
             String contentType = java.nio.file.Files.probeContentType(file.getFile().toPath());
             if (contentType == null) {
                 contentType = "application/octet-stream";
@@ -71,6 +80,8 @@ public class ScreenshotController {
             return ResponseEntity.ok()
                     .contentType(MediaType.parseMediaType(contentType))
                     .body(file);
+        } catch (AccessDeniedException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(null);
         } catch (java.io.IOException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         } catch (RuntimeException e) {
@@ -81,16 +92,18 @@ public class ScreenshotController {
     // Get all screenshots for a case
     @GetMapping("/case/{caseId}")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<List<ScreenshotDTO>> getScreenshotsByCase(@PathVariable("caseId") Long caseId) {
-        List<ScreenshotDTO> dtos = screenshotService.getScreenshotsByCaseId(caseId);
+    public ResponseEntity<List<ScreenshotDTO>> getScreenshotsByCase(@PathVariable("caseId") Long caseId,
+            @AuthenticationPrincipal UserDetailsImpl principal) {
+        List<ScreenshotDTO> dtos = screenshotService.getScreenshotsByCaseId(caseId, principal.getId(), isAdmin(principal));
         return ResponseEntity.ok(dtos);
     }
 
     // Get a screenshot by ID (metadata)
     @GetMapping("/{id}")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<ScreenshotDTO> getScreenshotById(@PathVariable("id") Long id) {
-        ScreenshotDTO dto = screenshotService.getScreenshotById(id);
+    public ResponseEntity<ScreenshotDTO> getScreenshotById(@PathVariable("id") Long id,
+            @AuthenticationPrincipal UserDetailsImpl principal) {
+        ScreenshotDTO dto = screenshotService.getScreenshotById(id, principal.getId(), isAdmin(principal));
         return ResponseEntity.ok(dto);
     }
 
@@ -99,10 +112,13 @@ public class ScreenshotController {
     @PreAuthorize("hasRole('INVESTIGATOR') or hasRole('ADMIN')")
     public ResponseEntity<?> updateScreenshotStatus(
             @PathVariable("id") Long id,
-            @RequestParam("status") Screenshot.Status status) {
+            @RequestParam("status") Screenshot.Status status,
+            @AuthenticationPrincipal UserDetailsImpl principal) {
         try {
-            screenshotService.updateScreenshotStatus(id, status);
+            screenshotService.updateScreenshotStatus(id, status, principal.getId(), isAdmin(principal));
             return ResponseEntity.ok().build();
+        } catch (AccessDeniedException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(null);
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         }
@@ -111,11 +127,15 @@ public class ScreenshotController {
     // Trigger analysis for a screenshot
     @PostMapping("/{id}/analyze")
     @PreAuthorize("hasRole('INVESTIGATOR') or hasRole('ADMIN')")
-    public ResponseEntity<?> triggerAnalysis(@PathVariable("id") Long id) {
+    public ResponseEntity<?> triggerAnalysis(@PathVariable("id") Long id,
+            @AuthenticationPrincipal UserDetailsImpl principal) {
         try {
+            caseAccessService.requireScreenshotAccess(id, principal.getId(), isAdmin(principal));
             // This will run asynchronously
             analysisService.analyzeScreenshot(id);
             return ResponseEntity.ok().build();
+        } catch (AccessDeniedException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(null);
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         }
@@ -124,10 +144,14 @@ public class ScreenshotController {
     // Get the analysis result for a screenshot
     @GetMapping("/{id}/analysis")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<AnalysisResultDTO> getAnalysisResult(@PathVariable("id") Long id) {
+    public ResponseEntity<AnalysisResultDTO> getAnalysisResult(@PathVariable("id") Long id,
+            @AuthenticationPrincipal UserDetailsImpl principal) {
         try {
+            caseAccessService.requireScreenshotAccess(id, principal.getId(), isAdmin(principal));
             AnalysisResultDTO dto = analysisService.getAnalysisResult(id);
             return ResponseEntity.ok(dto);
+        } catch (AccessDeniedException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(null);
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
         }
@@ -136,8 +160,10 @@ public class ScreenshotController {
     // Get the ELA image for a screenshot (if available)
     @GetMapping("/{id}/ela-image")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<Resource> getELaImage(@PathVariable("id") Long id) {
+    public ResponseEntity<Resource> getELaImage(@PathVariable("id") Long id,
+            @AuthenticationPrincipal UserDetailsImpl principal) {
         try {
+            caseAccessService.requireScreenshotAccess(id, principal.getId(), isAdmin(principal));
             // Get the analysis result to see if there is an ELA image file name
             AnalysisResultDTO dto = analysisService.getAnalysisResult(id);
             String elaImageFileName = dto.getElaImageFileName();
@@ -161,6 +187,8 @@ public class ScreenshotController {
             }
         } catch (MalformedURLException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        } catch (AccessDeniedException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(null);
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
         }
@@ -169,14 +197,18 @@ public class ScreenshotController {
     // Endpoint for generating a comparison result
     @PostMapping("/{id}/compare")
     @PreAuthorize("hasRole('INVESTIGATOR') or hasRole('ADMIN')")
-    public ResponseEntity<?> compareScreenshot(@PathVariable("id") Long id, @RequestParam("referenceId") Long referenceId) {
+    public ResponseEntity<?> compareScreenshot(@PathVariable("id") Long id, @RequestParam("referenceId") Long referenceId,
+            @AuthenticationPrincipal UserDetailsImpl principal) {
         try {
+            caseAccessService.requireScreenshotsAccess(id, referenceId, principal.getId(), isAdmin(principal));
             com.dfsa.model.ComparisonResult result = comparisonService.compare(id, referenceId);
             return ResponseEntity.ok(result);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         } catch (IllegalStateException e) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
+        } catch (AccessDeniedException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
         }
@@ -185,11 +217,15 @@ public class ScreenshotController {
     // Endpoint for getting a comparison result
     @GetMapping("/{id}/comparison")
     @PreAuthorize("hasRole('INVESTIGATOR') or hasRole('ADMIN') or hasRole('VIEWER')")
-    public ResponseEntity<?> getComparisonResult(@PathVariable("id") Long id) {
+    public ResponseEntity<?> getComparisonResult(@PathVariable("id") Long id,
+            @AuthenticationPrincipal UserDetailsImpl principal) {
         try {
+            caseAccessService.requireScreenshotAccess(id, principal.getId(), isAdmin(principal));
             return comparisonService.getComparisonResult(id)
                     .map(ResponseEntity::ok)
                     .orElse(ResponseEntity.notFound().build());
+        } catch (AccessDeniedException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
         }
@@ -198,8 +234,10 @@ public class ScreenshotController {
     // Serve the comparison difference map image
     @GetMapping("/{id}/comparison-image")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<Resource> getComparisonImage(@PathVariable("id") Long id) {
+    public ResponseEntity<Resource> getComparisonImage(@PathVariable("id") Long id,
+            @AuthenticationPrincipal UserDetailsImpl principal) {
         try {
+            caseAccessService.requireScreenshotAccess(id, principal.getId(), isAdmin(principal));
             com.dfsa.model.ComparisonResult result = comparisonService.getComparisonResult(id).orElseThrow();
             if (result.getDifferenceMapFileName() == null) {
                 return ResponseEntity.notFound().build();
@@ -216,8 +254,14 @@ public class ScreenshotController {
                     .contentType(MediaType.IMAGE_PNG)
                     .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + file.getName() + "\"")
                     .body(resource);
+        } catch (AccessDeniedException ex) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         } catch (Exception ex) {
             return ResponseEntity.notFound().build();
         }
+    }
+
+    private boolean isAdmin(UserDetailsImpl principal) {
+        return principal.getAuthorities().stream().anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority()));
     }
 }

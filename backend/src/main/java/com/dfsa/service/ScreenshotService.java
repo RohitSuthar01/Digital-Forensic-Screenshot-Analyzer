@@ -37,6 +37,9 @@ public class ScreenshotService {
     @Autowired
     private CaseRepository caseRepository;
 
+    @Autowired
+    private CaseAccessService caseAccessService;
+
     @Value("${screenshot.upload.dir}")
     private String uploadDir;
 
@@ -97,6 +100,13 @@ public class ScreenshotService {
         }
     }
 
+    @Transactional
+    public ScreenshotDTO uploadScreenshot(Long caseId, MultipartFile file, Long userId, boolean admin)
+            throws IOException, NoSuchAlgorithmException {
+        caseAccessService.requireCaseAccess(caseId, userId, admin);
+        return uploadScreenshot(caseId, file);
+    }
+
     private String sanitizeDisplayFilename(String filename) {
         String basename = filename.replace('\\', '/');
         basename = basename.substring(basename.lastIndexOf('/') + 1).replaceAll("[\\p{Cntrl}]", "").trim();
@@ -117,9 +127,19 @@ public class ScreenshotService {
         }
     }
 
+    public Resource getScreenshotFile(Long screenshotId, Long userId, boolean admin) throws MalformedURLException {
+        caseAccessService.requireScreenshotAccess(screenshotId, userId, admin);
+        return getScreenshotFile(screenshotId);
+    }
+
     public List<ScreenshotDTO> getScreenshotsByCaseId(Long caseId) {
         List<Screenshot> screenshots = screenshotRepository.findByTheCase_Id(caseId);
         return screenshots.stream().map(this::toDTOWithAnalysis).toList();
+    }
+
+    public List<ScreenshotDTO> getScreenshotsByCaseId(Long caseId, Long userId, boolean admin) {
+        caseAccessService.requireCaseAccess(caseId, userId, admin);
+        return getScreenshotsByCaseId(caseId);
     }
 
     public void updateScreenshotStatus(Long screenshotId, Screenshot.Status status) {
@@ -130,10 +150,20 @@ public class ScreenshotService {
         screenshotRepository.save(screenshot);
     }
 
+    public void updateScreenshotStatus(Long screenshotId, Screenshot.Status status, Long userId, boolean admin) {
+        caseAccessService.requireScreenshotAccess(screenshotId, userId, admin);
+        updateScreenshotStatus(screenshotId, status);
+    }
+
     public ScreenshotDTO getScreenshotById(Long screenshotId) {
         Screenshot screenshot = screenshotRepository.findById(screenshotId)
                 .orElseThrow(() -> new RuntimeException("Screenshot not found"));
         return toDTOWithAnalysis(screenshot);
+    }
+
+    public ScreenshotDTO getScreenshotById(Long screenshotId, Long userId, boolean admin) {
+        caseAccessService.requireScreenshotAccess(screenshotId, userId, admin);
+        return getScreenshotById(screenshotId);
     }
 
     private ScreenshotDTO toDTOWithAnalysis(Screenshot screenshot) {

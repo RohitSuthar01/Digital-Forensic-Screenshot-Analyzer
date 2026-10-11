@@ -13,6 +13,7 @@ import java.util.Optional;
 public interface ScreenshotRepository extends JpaRepository<Screenshot, Long> {
     Optional<Screenshot> findBySha256(String sha256);
     List<Screenshot> findByTheCase_Id(Long caseId);
+    List<Screenshot> findByTheCase_Investigator_Id(Long investigatorId);
     List<Screenshot> findByStatusIn(List<Screenshot.Status> statuses);
 
     @Query("SELECT COUNT(s) FROM Screenshot s WHERE s.status IN :statuses")
