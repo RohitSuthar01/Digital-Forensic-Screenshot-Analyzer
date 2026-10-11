@@ -113,8 +113,8 @@ export default function ComparisonPanel({ targetId }) {
 
       {comparisonResult && (
         <div style={{ padding: 16, background: 'rgba(255,255,255,0.03)', borderRadius: 8 }}>
-          <h4 style={{ marginBottom: 12, color: comparisonResult.visualDifferenceDetected ? 'var(--accent-red)' : 'var(--accent-green)' }}>
-            {comparisonResult.visualDifferenceDetected ? '🚨 Difference detected relative to the selected reference' : '✅ No visual differences detected'}
+          <h4 style={{ marginBottom: 12, color: comparisonResult.visualDifferenceDetected ? 'var(--accent-amber)' : 'var(--text-secondary)' }}>
+            {comparisonResult.visualDifferenceDetected ? 'Pixel differences exceeded the configured threshold' : 'No pixels exceeded the configured difference threshold'}
           </h4>
           
           <div style={{ fontSize: 13, marginBottom: 16 }}>

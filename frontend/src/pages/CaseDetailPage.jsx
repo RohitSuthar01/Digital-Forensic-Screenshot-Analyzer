@@ -129,7 +129,7 @@ const CaseDetailPage = () => {
                 <table>
                   <thead>
                     <tr>
-                      <th>Filename</th><th>Status</th><th>Verdict</th><th>Score</th>
+                      <th>Filename</th><th>Status</th><th>Verdict</th><th>Assessment score</th>
                       <th>Size</th><th>Uploaded</th><th>Actions</th>
                     </tr>
                   </thead>
@@ -143,7 +143,7 @@ const CaseDetailPage = () => {
                           </td>
                           <td><span className={`badge ${statusBadge[ss.status] || 'badge-gray'}`}>{ss.status}</span></td>
                           <td>{ss.verdict ? <span className={`badge ${verdictBadge[ss.verdict] || 'badge-gray'}`}>{ss.verdict}</span> : <span className="text-muted text-sm">—</span>}</td>
-                          <td>{ss.authenticityScore != null ? <strong style={{ color: ss.authenticityScore >= 70 ? 'var(--accent-green)' : ss.authenticityScore >= 40 ? 'var(--accent-amber)' : 'var(--accent-red)' }}>{ss.authenticityScore}</strong> : '—'}</td>
+                          <td>{ss.authenticityScore != null ? <span title="Legacy heuristic score; not a calibrated probability">{ss.authenticityScore} (legacy)</span> : <span title="No validated scoring model is configured">Not scored</span>}</td>
                           <td className="text-muted text-sm">{ss.fileSize ? `${(ss.fileSize / 1024).toFixed(1)} KB` : '—'}</td>
                           <td className="text-muted text-sm">{new Date(ss.uploadedAt).toLocaleDateString()}</td>
                           <td>
