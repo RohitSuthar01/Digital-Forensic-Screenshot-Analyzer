@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import HeroScene from '../components/HeroScene';
 
 const features = [
   { icon: '🔬', title: 'Error Level Analysis', desc: 'Detect JPEG compression artifacts to identify edited regions in images.' },
@@ -28,7 +29,7 @@ const LandingPage = () => (
       </div>
     </nav>
 
-    <div className="landing-hero">
+    <div className="landing-hero" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
       <div className="hero-badge">⚡ Digital Forensics Suite</div>
       <h1 className="hero-title">
         Analyze Screenshots<br />
@@ -38,7 +39,11 @@ const LandingPage = () => (
         Professional-grade screenshot forensics for cyber-crime investigators.
         Detect tampering, extract evidence, and maintain unbreakable chain of custody.
       </p>
-      <div className="hero-actions">
+      
+      {/* 3D Hero Visualization */}
+      <HeroScene />
+
+      <div className="hero-actions" style={{ marginTop: '2rem' }}>
         <Link to="/register" className="btn btn-primary btn-lg">Start Analyzing →</Link>
         <Link to="/login" className="btn btn-secondary btn-lg">Sign In</Link>
       </div>

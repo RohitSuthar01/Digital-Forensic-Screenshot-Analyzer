@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import axios from 'axios';
+import api from '../api/api';
 import Sidebar from '../components/Sidebar';
 
 const UploadPage = () => {
@@ -13,10 +13,7 @@ const UploadPage = () => {
   const [error, setError] = useState('');
   const [progress, setProgress] = useState(0);
 
-  const ALLOWED = ['image/png', 'image/jpeg', 'image/jpg', 'image/gif', 'image/webp'];
-
   const validateFile = (f) => {
-    if (!ALLOWED.includes(f.type)) { setError('Only PNG, JPG, GIF, WEBP images allowed.'); return false; }
     if (f.size > 10 * 1024 * 1024) { setError('File must be under 10 MB.'); return false; }
     return true;
   };
@@ -38,9 +35,8 @@ const UploadPage = () => {
     const formData = new FormData();
     formData.append('file', file);
     try {
-      const res = await axios.post(`/api/cases/${caseId}/screenshots`, formData, {
+      const res = await api.post(`/screenshots/upload/${caseId}`, formData, {
         withCredentials: true,
-        headers: { 'Content-Type': 'multipart/form-data' },
         onUploadProgress: (e) => setProgress(Math.round((e.loaded * 100) / e.total))
       });
       navigate(`/cases/${caseId}`);
@@ -79,11 +75,11 @@ const UploadPage = () => {
             ) : (
               <>
                 <div className="dropzone-title">Drop your screenshot here</div>
-                <div className="dropzone-sub">or click to browse · PNG, JPG, GIF, WEBP up to 10 MB</div>
+                <div className="dropzone-sub">or click to browse · PNG, JPG, BMP up to 10 MB (file content is validated on upload)</div>
               </>
             )}
           </div>
-          <input ref={fileInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={e => e.target.files[0] && onFileSelect(e.target.files[0])} />
+          <input ref={fileInputRef} type="file" accept="image/png,image/jpeg,image/bmp" style={{ display: 'none' }} onChange={e => e.target.files[0] && onFileSelect(e.target.files[0])} />
 
           {uploading && (
             <div style={{ margin: '20px 0' }}>
@@ -99,14 +95,14 @@ const UploadPage = () => {
           <div style={{ display: 'flex', gap: 12, marginTop: 24 }}>
             <Link to={`/cases/${caseId}`} className="btn btn-secondary">Cancel</Link>
             <button className="btn btn-primary" onClick={handleUpload} disabled={!file || uploading} style={{ flex: 1, justifyContent: 'center' }}>
-              {uploading ? '⏳ Uploading…' : '📤 Upload & Analyze'}
+              {uploading ? '⏳ Uploading…' : '📤 Upload Screenshot'}
             </button>
           </div>
 
           <div className="card" style={{ marginTop: 28 }}>
             <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 12 }}>📋 What happens next?</h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {['File is hashed (MD5 + SHA-256) for chain of custody','Metadata (EXIF/XMP) is extracted and analyzed','Error Level Analysis detects JPEG editing artifacts','OCR extracts URLs, emails, IPs from image text','Authenticity score (0–100) and verdict is generated'].map((step, i) => (
+              {['The original file is retained and hashed (MD5 and SHA-256)','Supported metadata is extracted; missing metadata is not treated as tampering','JPEG ELA may be available as a visualization for human review','OCR may extract text and evidence when the OCR module is available','After upload, start analysis from the case page to see findings and limitations'].map((step, i) => (
                 <div key={i} style={{ display: 'flex', gap: 12, fontSize: 14, alignItems: 'flex-start' }}>
                   <span style={{ color: 'var(--accent-cyan)', fontWeight: 700, fontSize: 12, marginTop: 2 }}>{i + 1}.</span>
                   <span style={{ color: 'var(--text-secondary)' }}>{step}</span>

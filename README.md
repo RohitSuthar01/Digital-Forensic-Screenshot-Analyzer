@@ -6,7 +6,7 @@ An evidence-oriented web application for analyzing screenshots, reviewing forens
 
 ## Project Administration
 
-**Project Guide:** [Er. Ram Babu Buri]  
+**Project Guide:** Er. Ram Babu Buri  
 **Project Type:** Academic Project Based Learning.  
 **Repository:** [Digital-Forensic-Screenshot-Analyzer](https://github.com/RohitSuthar01/Digital-Forensic-Screenshot-Analyzer)
 

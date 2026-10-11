@@ -6,19 +6,19 @@
 
 INSERT INTO users (id, first_name, last_name, email, username, password, role, enabled, failed_attempts, lock_until, created_at, updated_at)
 SELECT 1, 'System', 'Admin', 'admin@dfsa.com', 'admin',
-       '$2a$10$lrluHXTnJT.K4ffJF0Bbj.03tFB0blv1paNoYz1FcOC3MZ66vGd3G',
+       '$2a$10$/yt/eDo2YcwnE1MLv8bGtOEbgksACOX9LZLUyP7Iw2FidepAcXp4O',
        'ADMIN', TRUE, 0, NULL, NOW(), NOW()
 WHERE NOT EXISTS (SELECT 1 FROM users WHERE username = 'admin');
 
 INSERT INTO users (id, first_name, last_name, email, username, password, role, enabled, failed_attempts, lock_until, created_at, updated_at)
 SELECT 2, 'John', 'Investigator', 'investigator1@dfsa.com', 'investigator1',
-       '$2a$10$F5UY5WXVYvuRl7EyVmczVOud30JSbU8jz5JNo0uu.G12cKdcJojDe',
+       '$2a$10$uooSk41HvhQvJ346UfTMa.W0Gi.cuBrN6bzCSAEE33qpmCMbZvzV6',
        'INVESTIGATOR', TRUE, 0, NULL, NOW(), NOW()
 WHERE NOT EXISTS (SELECT 1 FROM users WHERE username = 'investigator1');
 
 INSERT INTO users (id, first_name, last_name, email, username, password, role, enabled, failed_attempts, lock_until, created_at, updated_at)
 SELECT 3, 'Jane', 'Viewer', 'viewer1@dfsa.com', 'viewer1',
-       '$2a$10$wBeX9g7qYnSdfOo03kUeruPZHNcZyNzvGn2XNB4mw/hjrrPlVr8Fu',
+       '$2a$10$z7WmbRyL72AiFutwI9q5YOqqr1f.tetBOeJhSXCchy/Cf8mpeFdIm',
        'VIEWER', TRUE, 0, NULL, NOW(), NOW()
 WHERE NOT EXISTS (SELECT 1 FROM users WHERE username = 'viewer1');
 

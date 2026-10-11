@@ -25,7 +25,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/screenshots")
-@CrossOrigin(origins = "http://localhost:5173", allowCredentials = "true")
+@CrossOrigin(origins = {"http://localhost:5173", "http://localhost:5188"}, allowCredentials = "true")
 public class ScreenshotController {
 
     @Autowired
@@ -33,6 +33,9 @@ public class ScreenshotController {
 
     @Autowired
     private AnalysisService analysisService;
+
+    @Autowired
+    private com.dfsa.service.ComparisonService comparisonService;
 
     @Value("${screenshot.upload.dir}")
     private String uploadDir;
@@ -61,10 +64,14 @@ public class ScreenshotController {
     public ResponseEntity<Resource> getScreenshotFile(@PathVariable("id") Long id) {
         try {
             Resource file = screenshotService.getScreenshotFile(id);
+            String contentType = java.nio.file.Files.probeContentType(file.getFile().toPath());
+            if (contentType == null) {
+                contentType = "application/octet-stream";
+            }
             return ResponseEntity.ok()
-                    .contentType(MediaType.IMAGE_JPEG) // We don't know the actual type, but we can let Spring determine it or set to application/octet-stream
+                    .contentType(MediaType.parseMediaType(contentType))
                     .body(file);
-        } catch (MalformedURLException e) {
+        } catch (java.io.IOException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
@@ -156,6 +163,61 @@ public class ScreenshotController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+        }
+    }
+
+    // Endpoint for generating a comparison result
+    @PostMapping("/{id}/compare")
+    @PreAuthorize("hasRole('INVESTIGATOR') or hasRole('ADMIN')")
+    public ResponseEntity<?> compareScreenshot(@PathVariable("id") Long id, @RequestParam("referenceId") Long referenceId) {
+        try {
+            com.dfsa.model.ComparisonResult result = comparisonService.compare(id, referenceId);
+            return ResponseEntity.ok(result);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+        }
+    }
+
+    // Endpoint for getting a comparison result
+    @GetMapping("/{id}/comparison")
+    @PreAuthorize("hasRole('INVESTIGATOR') or hasRole('ADMIN') or hasRole('VIEWER')")
+    public ResponseEntity<?> getComparisonResult(@PathVariable("id") Long id) {
+        try {
+            return comparisonService.getComparisonResult(id)
+                    .map(ResponseEntity::ok)
+                    .orElse(ResponseEntity.notFound().build());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+        }
+    }
+
+    // Serve the comparison difference map image
+    @GetMapping("/{id}/comparison-image")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Resource> getComparisonImage(@PathVariable("id") Long id) {
+        try {
+            com.dfsa.model.ComparisonResult result = comparisonService.getComparisonResult(id).orElseThrow();
+            if (result.getDifferenceMapFileName() == null) {
+                return ResponseEntity.notFound().build();
+            }
+
+            File file = new File(uploadDir, result.getDifferenceMapFileName());
+            if (!file.exists()) {
+                return ResponseEntity.notFound().build();
+            }
+
+            Resource resource = new UrlResource(file.toURI());
+            
+            return ResponseEntity.ok()
+                    .contentType(MediaType.IMAGE_PNG)
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + file.getName() + "\"")
+                    .body(resource);
+        } catch (Exception ex) {
+            return ResponseEntity.notFound().build();
         }
     }
 }

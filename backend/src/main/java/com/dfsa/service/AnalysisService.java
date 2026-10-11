@@ -13,12 +13,12 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.LinkedHashMap;
 
 @Service
 public class AnalysisService {
@@ -31,6 +31,9 @@ public class AnalysisService {
 
     @Autowired
     private MetadataAnalyzer metadataAnalyzer;
+
+    @Autowired
+    private LsbSteganographyAnalyzer lsbSteganographyAnalyzer;
 
     @Autowired
     private ErrorLevelAnalysis errorLevelAnalysis;
@@ -70,29 +73,53 @@ public class AnalysisService {
             // 2. Metadata analysis
             Map<String, Object> metadataResult = metadataAnalyzer.analyze(screenshot);
 
+            // 2a. Search common sequential LSB channel patterns for readable text.
+            Map<String, Object> lsbResult;
+            try {
+                lsbResult = lsbSteganographyAnalyzer.analyze(new java.io.File(screenshot.getFilePath()));
+            } catch (RuntimeException e) {
+                lsbResult = new HashMap<>();
+                lsbResult.put("status", "FAILED");
+                lsbResult.put("messageDetected", false);
+                lsbResult.put("reason", "LSB analysis failed; no conclusion was made.");
+                lsbResult.put("limitation", "LSB scanning only covers common sequential readable-text patterns.");
+            }
+            metadataResult.put("lsbSteganography", lsbResult);
+
             // 3. Error Level Analysis (if applicable)
             String elaImageFileName = null;
+            Map<String, Object> moduleStatuses = new LinkedHashMap<>();
+            moduleStatuses.put("metadata", metadataResult.getOrDefault("metadataStatus", "UNAVAILABLE"));
+            moduleStatuses.put("lsbSteganography", lsbResult.getOrDefault("status", "UNAVAILABLE"));
             try {
                 elaImageFileName = errorLevelAnalysis.analyze(screenshot);
+                moduleStatuses.put("ela", elaImageFileName == null ? "NOT_APPLICABLE" : "COMPLETED");
             } catch (IOException e) {
-                // If ELA fails (e.g., not a JPEG), we can still continue with other analyses
-                // We'll just log the error and set elaImageFileName to null
-                System.err.println("ELA analysis failed: " + e.getMessage());
+                moduleStatuses.put("ela", "FAILED");
             }
 
             // 4. Tamper heuristics
-            Map<String, Object> tamperResult = tamperHeuristics.analyze(screenshot);
+            Map<String, Object> tamperResult;
+            try {
+                tamperResult = tamperHeuristics.analyze(screenshot);
+                moduleStatuses.put("tamperAssessment", tamperResult.getOrDefault("status", "COMPLETED"));
+            } catch (Exception e) {
+                tamperResult = new HashMap<>();
+                tamperResult.put("status", "FAILED");
+                tamperResult.put("limitation", "Tamper assessment failed; no inference was made from it.");
+                moduleStatuses.put("tamperAssessment", "FAILED");
+            }
 
             // 5. OCR and evidence extraction
             Map<String, Object> ocrResult = null;
             try {
                 ocrResult = ocrAndEvidenceExtractor.analyze(screenshot);
-            } catch (Throwable e) {
-                // If OCR fails, we can still continue
-                System.err.println("OCR analysis failed: " + e.getMessage());
+            } catch (Exception e) {
                 ocrResult = new HashMap<>();
-                ocrResult.put("error", e.getMessage());
+                ocrResult.put("error", "OCR module failed; other analysis results are still available.");
             }
+            moduleStatuses.put("ocr", ocrResult.containsKey("error") ? "FAILED" : "COMPLETED");
+            tamperResult.put("moduleStatuses", moduleStatuses);
 
             // 6. Compute authenticity score and verdict
             Map<String, Object> authenticityResult = authenticityScorer.computeScore(
@@ -103,16 +130,16 @@ public class AnalysisService {
             );
 
             // 7. Save analysis result
-            AnalysisResult analysisResult = new AnalysisResult();
+            AnalysisResult analysisResult = analysisResultRepository.findByScreenshotId(screenshotId)
+                    .orElseGet(AnalysisResult::new);
             analysisResult.setScreenshot(screenshot);
             analysisResult.setVerdict((AnalysisResult.AuthenticityVerdict) authenticityResult.get("verdict"));
             analysisResult.setAuthenticityScore((Integer) authenticityResult.get("score"));
             analysisResult.setVerdictExplanation((String) authenticityResult.get("explanation"));
             analysisResult.setElaImageFileName(elaImageFileName);
-
-            // We can store the detailed results as JSON in the analysis_results table if we want to keep them for debugging.
-            // For now, we'll just store the summary. We can add JSON columns later if needed.
-            // For the purpose of this task, we'll leave the JSON columns as null and focus on the score and verdict.
+            analysisResult.setMetadataJson(metadataResult);
+            analysisResult.setTamperHeuristicsJson(tamperResult);
+            analysisResult.setOcrText(ocrResult.get("ocr_text") instanceof String text ? text : null);
 
             analysisResultRepository.save(analysisResult);
 
@@ -121,13 +148,12 @@ public class AnalysisService {
             screenshot.setProcessedAt(new Date());
             screenshotRepository.save(screenshot);
 
-        } catch (Throwable e) {
-            // If any step fails, update status to FAILED and log the error
+        } catch (Exception e) {
             screenshot.setStatus(Screenshot.Status.FAILED);
             screenshot.setProcessedAt(new Date());
-            screenshot.setErrorMessage(e.getMessage() != null ? e.getMessage() : e.toString());
+            screenshot.setErrorMessage("Analysis failed. Check server diagnostics and retry.");
             screenshotRepository.save(screenshot);
-            System.err.println("Analysis failed for screenshot ID " + screenshotId + ": " + e.getMessage());
+            System.err.println("Analysis failed for screenshot ID " + screenshotId + " (" + e.getClass().getSimpleName() + ")");
         }
     }
 

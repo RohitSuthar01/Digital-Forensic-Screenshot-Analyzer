@@ -2,16 +2,20 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useParams, Link } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
+import ImageInspector from '../components/ImageInspector';
+import ComparisonPanel from '../components/ComparisonPanel';
 
 const verdictConfig = {
   AUTHENTIC: { color: 'var(--accent-green)', icon: '✅', label: 'Authentic' },
   SUSPICIOUS: { color: 'var(--accent-amber)', icon: '⚠️', label: 'Suspicious' },
   LIKELY_TAMPERED: { color: 'var(--accent-red)', icon: '🚨', label: 'Likely Tampered' },
+  INCONCLUSIVE: { color: '#94A3B8', icon: '❓', label: 'Inconclusive / Needs Review' },
 };
 
 const AnalysisResultPage = () => {
   const { screenshotId } = useParams();
   const [result, setResult] = useState(null);
+  const [screenshot, setScreenshot] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -20,6 +24,9 @@ const AnalysisResultPage = () => {
       .then(r => setResult(r.data))
       .catch(() => setError('Failed to load analysis result.'))
       .finally(() => setLoading(false));
+    axios.get(`/api/screenshots/${screenshotId}`, { withCredentials: true })
+      .then(r => setScreenshot(r.data))
+      .catch(() => setScreenshot(null));
   }, [screenshotId]);
 
   const score = result?.authenticityScore ?? 0;
@@ -82,26 +89,69 @@ const AnalysisResultPage = () => {
                 </div>
               </div>
 
-              {/* ELA Image */}
-              {result.elaImageFileName && (
+              <ComparisonPanel targetId={screenshotId} />
+
+              <ImageInspector 
+                originalSrc={`/api/screenshots/${screenshotId}/file`} 
+                elaSrc={result.elaImageFileName ? `/api/screenshots/${screenshotId}/ela-image` : null} 
+              />
+
+              <div className="card" style={{ marginBottom: 24 }}>
+                <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 12 }}>Evidence integrity and module status</h3>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(220px,1fr))', gap: 10, fontSize: 13 }}>
+                  <div><strong>SHA-256:</strong> <code style={{ wordBreak: 'break-all' }}>{screenshot?.sha256 || 'Unavailable'}</code></div>
+                  <div><strong>MD5:</strong> <code style={{ wordBreak: 'break-all' }}>{screenshot?.md5 || 'Unavailable'}</code></div>
+                  <div><strong>ELA:</strong> {result.elaImageFileName ? 'Completed (visual review only)' : (result.tamperHeuristicsJson?.moduleStatuses?.ela === 'NOT_APPLICABLE' ? 'Not applicable to this image format' : 'Unavailable; see module status')}</div>
+                  <div><strong>Metadata:</strong> {result.metadataJson?.metadataStatus || 'Unavailable'}</div>
+                </div>
+                {result.tamperHeuristicsJson?.moduleStatuses && (
+                  <div style={{ marginTop: 14, display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                    {Object.entries(result.tamperHeuristicsJson.moduleStatuses).map(([name, status]) => (
+                      <span key={name} className="badge badge-cyan">{name}: {status}</span>
+                    ))}
+                  </div>
+                )}
+                {result.tamperHeuristicsJson?.limitation && (
+                  <p style={{ margin: '10px 0 0', color: 'var(--text-secondary)', fontSize: 12 }}>{result.tamperHeuristicsJson.limitation}</p>
+                )}
+                <p style={{ margin: '14px 0 0', color: 'var(--text-muted)', fontSize: 12 }}>
+                  The score and metadata are screening indicators. They cannot prove that an image is authentic or identify the original without a trusted reference.
+                </p>
+              </div>
+
+              {result.metadataJson && (
                 <div className="card" style={{ marginBottom: 24 }}>
-                  <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 16 }}>🔬 Error Level Analysis (ELA)</h3>
-                  <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 16 }}>
-                    Bright areas indicate higher error levels, potentially revealing edited regions.
-                  </p>
-                  <img src={`/api/screenshots/${screenshotId}/ela`} alt="ELA" style={{ maxWidth: '100%', borderRadius: 8, border: '1px solid var(--border)' }} />
+                  <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 12 }}>🖼️ Image properties</h3>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(180px,1fr))', gap: 12, fontSize: 13 }}>
+                    <div><strong>Format:</strong> {result.metadataJson.format || 'Unavailable'}</div>
+                    <div><strong>Color mode:</strong> {result.metadataJson.colorMode || 'Unavailable'}</div>
+                    <div><strong>Resolution:</strong> {result.metadataJson.resolution || (result.metadataJson.width && result.metadataJson.height ? `${result.metadataJson.width} × ${result.metadataJson.height} pixels` : 'Unavailable')}</div>
+                  </div>
+                  <p style={{ margin: '10px 0 0', color: 'var(--text-muted)', fontSize: 12 }}>Color mode describes the decoded image representation reported by the image library.</p>
+                </div>
+              )}
+
+              {result.metadataJson?.lsbSteganography && (
+                <div className="card" style={{ marginBottom: 24 }}>
+                  <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 10 }}>🕵️ LSB steganography screening</h3>
+                  <div style={{ marginBottom: 8 }}><span className="badge badge-cyan">{result.metadataJson.lsbSteganography.status || 'UNKNOWN'}</span> {result.metadataJson.lsbSteganography.channelPattern && <span style={{ marginLeft: 8 }}>Pattern: {result.metadataJson.lsbSteganography.channelPattern}</span>}</div>
+                  <p style={{ fontSize: 13, marginBottom: 8 }}>{result.metadataJson.lsbSteganography.finding || result.metadataJson.lsbSteganography.reason || 'No LSB finding available.'}</p>
+                  {result.metadataJson.lsbSteganography.extractedText && (
+                    <pre style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', background: 'rgba(0,0,0,0.2)', padding: 12, borderRadius: 8, fontSize: 13 }}>{result.metadataJson.lsbSteganography.extractedText}</pre>
+                  )}
+                  {result.metadataJson.lsbSteganography.limitation && <p style={{ color: 'var(--text-muted)', fontSize: 12, marginBottom: 0 }}>{result.metadataJson.lsbSteganography.limitation}</p>}
                 </div>
               )}
 
               {/* Metadata */}
               {result.metadataJson && Object.keys(result.metadataJson).length > 0 && (
                 <div className="card" style={{ marginBottom: 24 }}>
-                  <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 16 }}>📄 EXIF Metadata</h3>
+                  <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 16 }}>📄 Extracted image metadata</h3>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(280px,1fr))', gap: 8 }}>
                     {Object.entries(result.metadataJson).map(([k, v]) => (
                       <div key={k} style={{ display: 'flex', gap: 12, padding: '8px 12px', background: 'rgba(255,255,255,0.03)', borderRadius: 8 }}>
                         <span style={{ fontSize: 12, color: 'var(--text-muted)', minWidth: 100 }}>{k}</span>
-                        <span style={{ fontSize: 13, fontFamily: 'JetBrains Mono, monospace', wordBreak: 'break-all' }}>{String(v)}</span>
+                        <span style={{ fontSize: 13, fontFamily: 'JetBrains Mono, monospace', wordBreak: 'break-all' }}>{typeof v === 'object' ? JSON.stringify(v) : String(v)}</span>
                       </div>
                     ))}
                   </div>

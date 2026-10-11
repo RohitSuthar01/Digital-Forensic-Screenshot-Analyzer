@@ -49,8 +49,15 @@ public class OCRAndEvidenceExtractor {
         tesseract.setDatapath(new File("tessdata").getAbsolutePath());
         tesseract.setLanguage("eng");
 
-        // Do OCR
-        String ocrText = tesseract.doOCR(image);
+        // Do OCR using the File object directly to avoid JNA "Invalid memory access" with BufferedImage
+        String ocrText = "";
+        try {
+            ocrText = tesseract.doOCR(file);
+        } catch (Error e) {
+            // Catch native errors gracefully
+            result.put("error", "Native OCR Error: " + e.getMessage());
+            return result;
+        }
 
         // Extract evidence using regex
         List<String> urls = extractUrls(ocrText);
