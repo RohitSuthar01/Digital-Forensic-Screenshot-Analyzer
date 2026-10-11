@@ -26,7 +26,7 @@ public class AnalysisResult {
     @Enumerated(EnumType.STRING)
     private AuthenticityVerdict verdict; // AUTHENTIC, SUSPICIOUS, LIKELY_TAMPERED
 
-    private Integer authenticityScore; // 0-100
+    private Integer authenticityScore; // nullable; populated only when a validated scoring model is configured
 
     private String verdictExplanation;
 

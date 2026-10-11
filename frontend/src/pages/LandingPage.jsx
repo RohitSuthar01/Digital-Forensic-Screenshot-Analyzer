@@ -3,12 +3,12 @@ import { Link } from 'react-router-dom';
 import HeroScene from '../components/HeroScene';
 
 const features = [
-  { icon: '🔬', title: 'Error Level Analysis', desc: 'Detect JPEG compression artifacts to identify edited regions in images.' },
+  { icon: '🔬', title: 'Error Level Analysis', desc: 'Visualize JPEG recompression differences for human review; ELA alone cannot prove editing.' },
   { icon: '📄', title: 'EXIF Metadata', desc: 'Extract hidden metadata including camera info, GPS, and editing software signatures.' },
   { icon: '🔤', title: 'OCR Evidence', desc: 'Automatically extract URLs, emails, phone numbers, and IPs from screenshot text.' },
-  { icon: '🏛️', title: 'Chain of Custody', desc: 'Cryptographic hash verification (MD5 + SHA-256) and full audit trail logging.' },
-  { icon: '📊', title: 'Authenticity Score', desc: 'AI-driven 0–100 score with AUTHENTIC / SUSPICIOUS / LIKELY_TAMPERED verdict.' },
-  { icon: '📑', title: 'PDF Reports', desc: 'Generate court-ready forensic PDF reports with all findings and evidence.' },
+  { icon: '🏛️', title: 'Evidence Integrity', desc: 'MD5 and SHA-256 file fingerprints with application audit records.' },
+  { icon: '📊', title: 'Forensic Review', desc: 'Review metadata, OCR, LSB screening, and comparison indicators with their limitations.' },
+  { icon: '📑', title: 'PDF Reports', desc: 'Generate downloadable reports containing analysis findings and evidence details.' },
 ];
 
 const LandingPage = () => (
@@ -36,8 +36,8 @@ const LandingPage = () => (
         <span className="gradient-text">Like a Detective</span>
       </h1>
       <p className="hero-sub">
-        Professional-grade screenshot forensics for cyber-crime investigators.
-        Detect tampering, extract evidence, and maintain unbreakable chain of custody.
+        A screenshot evidence-review tool for investigators.
+        Examine forensic indicators, compare files, and record findings for human review.
       </p>
       
       {/* 3D Hero Visualization */}

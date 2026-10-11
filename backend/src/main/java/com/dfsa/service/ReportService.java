@@ -168,8 +168,10 @@ public class ReportService {
         analysisTable.setSpacingBefore(10f);
         analysisTable.setSpacingAfter(10f);
 
-        analysisTable.addCell("Authenticity Score:");
-        analysisTable.addCell(analysisResult.getAuthenticityScore().toString() + "/100");
+        analysisTable.addCell("Evidence assessment score:");
+        analysisTable.addCell(analysisResult.getAuthenticityScore() == null
+                ? "Not calculated; no validated probability model is configured."
+                : analysisResult.getAuthenticityScore() + "/100 (legacy heuristic score; not a probability)");
 
         analysisTable.addCell("Verdict:");
         analysisTable.addCell(analysisResult.getVerdict().toString());
@@ -379,7 +381,7 @@ public class ReportService {
         screenshotsTable.addCell("Screenshot");
         screenshotsTable.addCell("MD5");
         screenshotsTable.addCell("SHA-256");
-        screenshotsTable.addCell("Score/Verdict");
+        screenshotsTable.addCell("Assessment/Verdict");
 
         int index = 1;
         for (Screenshot screenshot : screenshotsList) {
@@ -391,7 +393,10 @@ public class ReportService {
             screenshotsTable.addCell(screenshot.getSha256());
 
             if (analysisResult != null) {
-                screenshotsTable.addCell(analysisResult.getAuthenticityScore() + "/100 (" + analysisResult.getVerdict() + ")");
+                String assessment = analysisResult.getAuthenticityScore() == null
+                        ? "Not scored"
+                        : analysisResult.getAuthenticityScore() + "/100 (legacy, not a probability)";
+                screenshotsTable.addCell(assessment + " (" + analysisResult.getVerdict() + ")");
             } else {
                 screenshotsTable.addCell("Not analyzed");
             }
@@ -426,8 +431,10 @@ public class ReportService {
                     detailTable.setSpacingBefore(5f);
                     detailTable.setSpacingAfter(5f);
 
-                    detailTable.addCell("Authenticity Score:");
-                    detailTable.addCell(analysisResult.getAuthenticityScore().toString() + "/100");
+                    detailTable.addCell("Evidence assessment score:");
+                    detailTable.addCell(analysisResult.getAuthenticityScore() == null
+                            ? "Not calculated; no validated probability model is configured."
+                            : analysisResult.getAuthenticityScore() + "/100 (legacy heuristic score; not a probability)");
 
                     detailTable.addCell("Verdict:");
                     detailTable.addCell(analysisResult.getVerdict().toString());

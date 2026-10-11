@@ -95,6 +95,27 @@ class ComparisonServiceTest {
         assertTrue(result.getChangedRegionsDetails().contains("no pixels differ"));
     }
 
+    @Test
+    void reportsSubThresholdPixelChangesWithoutCallingImagesIdentical() throws Exception {
+        Screenshot target = screenshot(5L, 10L, "threshold-target.png");
+        Screenshot reference = screenshot(6L, 10L, "threshold-reference.png");
+        writeImage("threshold-target.png", 2, 2, 0xFF646464);
+        writeImage("threshold-reference.png", 2, 2, 0xFF676767);
+        when(screenshotRepository.findById(5L)).thenReturn(Optional.of(target));
+        when(screenshotRepository.findById(6L)).thenReturn(Optional.of(reference));
+        when(comparisonRepository.findByTargetScreenshotId(5L)).thenReturn(Optional.empty());
+        when(analysisRepository.findByScreenshotId(anyLong())).thenReturn(Optional.empty());
+        when(comparisonRepository.save(any(ComparisonResult.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        ReflectionTestUtils.setField(service, "uploadDir", tempDir.toString());
+
+        ComparisonResult result = service.compare(5L, 6L);
+
+        assertFalse(result.isVisualDifferenceDetected());
+        assertTrue(result.getChangedRegionsDetails().contains("MD5 DIFFERENT"));
+        assertTrue(result.getChangedRegionsDetails().contains("SHA-256 DIFFERENT"));
+        assertTrue(result.getChangedRegionsDetails().contains("no pixels differ above the 5-level channel threshold"));
+    }
+
     private Screenshot screenshot(long id, long caseId, String name) {
         Case theCase = new Case();
         theCase.setId(caseId);

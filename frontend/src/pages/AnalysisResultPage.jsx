@@ -75,10 +75,9 @@ const AnalysisResultPage = () => {
     return () => { cancelled = true; window.clearTimeout(pollTimer); };
   }, [screenshotId]);
 
-  const score = result?.authenticityScore ?? 0;
+  const score = result?.authenticityScore;
   const verdict = result?.verdict;
   const vc = verdictConfig[verdict] || { color: 'var(--text-muted)', icon: '❓', label: 'Unknown' };
-  const scorePct = (score / 100) * 360;
 
   if (loading) return (
     <div className="app-layout"><Sidebar />
@@ -120,19 +119,15 @@ const AnalysisResultPage = () => {
                   </div>
                 </div>
 
-                {/* Score Ring */}
+                {/* Do not imply a calibrated probability when no validated classifier is configured. */}
                 <div className="card" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12 }}>
-                  <div style={{ fontSize: 13, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 1 }}>Authenticity Score</div>
-                  <div style={{
-                    width: 110, height: 110, borderRadius: '50%',
-                    background: `conic-gradient(${vc.color} ${scorePct}deg, var(--bg-secondary) 0deg)`,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative'
-                  }}>
-                    <div style={{ position: 'absolute', inset: 10, borderRadius: '50%', background: 'var(--bg-card)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                      <span style={{ fontSize: 28, fontWeight: 800, color: vc.color }}>{score}</span>
-                      <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>/100</span>
-                    </div>
+                  <div style={{ fontSize: 13, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 1 }}>Evidence Assessment</div>
+                  <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-secondary)', textAlign: 'center' }}>
+                    {score == null ? 'No validated probability score' : `${score} (legacy score)`}
                   </div>
+                  <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: 12, textAlign: 'center' }}>
+                    Indicators support human review; they do not prove authenticity or editing.
+                  </p>
                 </div>
               </div>
 
