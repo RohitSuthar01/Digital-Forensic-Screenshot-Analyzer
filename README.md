@@ -1,384 +1,383 @@
 # Digital Forensic Screenshot Analyzer
 
-An evidence-oriented web application for analyzing screenshots, reviewing forensic indicators, and comparing images within a case.
+### A Java-based platform for organizing screenshot evidence and reviewing forensic indicators.
 
 ---
+
+## Week 1: Project Administration and Problem Definition
 
 ## Project Administration
 
-**Project Guide:** [Add guide name]  
-**Project Type:** Academic team project  
-**Repository:** [Digital-Forensic-Screenshot-Analyzer](https://github.com/RohitSuthar01/Digital-Forensic-Screenshot-Analyzer)
+**Project Guide:** Er. Ram Babu Buri  
+**Department:** Computer Science and Engineering  
+**Institution:** Arya College of Engineering & IT  
+**Project Type:** Digital forensics web application
 
-### Team Members and Responsibilities
+### Team Members
 
-The roles below describe the team's planned work distribution. They are not a claim about individual Git authorship. Enrollment numbers were not provided.
+| Member | RTU Roll Number | Project Role | Email | Mobile |
+| :--- | :--- | :--- | :--- | :--- |
+| Rohit Suthar | 24EARCS138 | Team lead, backend integration, analysis workflow, and case comparison | rohitsutharrr@gmail.com | 7426033714 |
+| Ritika Sharma | 24EARCS136 | React frontend, user experience, upload and analysis pages | ritikasharmapinjor@gmail.com | 9138266159 |
+| Ronak Thadani | 24EARCS139 | Case and database workflow, persistence, and backend support | thadanir8@gmail.com | 8000387244 |
+| Tanishk | 24EARCS172 | Image-forensics methods, metadata, hashes, ELA, OCR, and LSB screening | tanishk.99s99@gmail.com | 9461116756 |
+| Rishi | 24EARCS133 | Test planning, workflow verification, report review, and documentation | Not provided | 8441000770 |
 
-| Member | Assigned role / module | Email | Mobile |
-| :--- | :--- | :--- | :--- |
-| Rohit Suthar (Team Lead) | Backend integration, authentication/security coordination, case workflow, and repository integration | rohitsutharrr@gmail.com | 7426033714 |
-| Ritika Sharma | Frontend UI/UX, React pages, responsive layouts, and API integration | ritikasharmapinjor@gmail.com | 9138266159 |
-| Ronak Thadani | Case/database workflow, data model coordination, and persistence support | thadanir8@gmail.com | 8000387244 |
-| Tanishk | Forensic analysis module: metadata, hashing, ELA, OCR, and steganography screening | tanishk.99s99@gmail.com | 9461116756 |
-| Rishi | Quality assurance, workflow verification, test cases, and report review | Not provided | 8441000770 |
+### Problem Statement
+
+Screenshots are easy to copy, recompress, crop, or edit, while visual inspection alone may not reveal every change. Investigators also need a consistent way to preserve uploaded files, associate them with cases, record analysis output, and compare evidence without confusing screenshots from unrelated cases.
+
+### Project Objectives
+
+- Accept supported screenshot and image files and associate them with an investigation case.
+- Preserve uploaded evidence and record its file details and cryptographic fingerprints.
+- Extract image metadata and compute forensic indicators using the implemented Java analysis modules.
+- Present findings, limitations, and comparison output through a web interface and downloadable report.
+- Keep case access, user roles, and important actions within a managed application workflow.
 
 ---
+
+## Week 2: Abstract and Project Scope
 
 ## Abstract
 
-Screenshots are frequently used as evidence, but their appearance alone cannot establish whether they are original, altered, or copied. Basic metadata viewers provide limited information, while manual review of multiple files is time-consuming. A reliable workflow needs to preserve uploaded evidence and present useful indicators without treating any single signal as proof.
+Digital screenshots are frequently used to document conversations, transactions, and other events. Since image editing and recompression can alter a file without making every change obvious to a viewer, a repeatable evidence-review workflow is useful. A screenshot should be examined with several independent indicators and its findings should be presented with appropriate limitations.
 
-Digital Forensic Screenshot Analyzer is a web application built with a React frontend and a Java Spring Boot backend. Investigators organize screenshots into cases, inspect file metadata and cryptographic fingerprints, review error-level and tampering heuristics, extract visible text and evidence candidates with OCR, screen for some sequential LSB text patterns, and compare screenshots belonging to the same case.
+The Digital Forensic Screenshot Analyzer is a web application with a Java 17 and Spring Boot backend and a React/Vite frontend. Its backend contains modules for image metadata, file hashes, Error Level Analysis (ELA), OCR-based evidence extraction, LSB steganography screening, perceptual hashing, and tampering heuristics. It also manages users, cases, screenshots, analysis results, comparisons, notes, and audit records using JPA and MySQL.
 
-The application combines these checks into a reviewable analysis result, including explanations and visual artifacts where supported. Its outputs are screening indicators for a human investigator; they do not guarantee that an image is authentic or manipulated. The project stores case and analysis records in MySQL and keeps uploaded evidence files outside the web root.
+The application provides investigators with case-based uploads, analysis result views, image inspection, reference-image comparison, dashboards, and PDF reporting. The output is intended to support human review: hashes establish exact byte equality or difference, while ELA and other heuristics indicate patterns that may warrant further investigation. No single score or visual map is treated as conclusive proof that an image is authentic or manipulated.
 
----
+### Scope and Limitations
 
-## System Architecture & Flow
-
-### High-Level Architecture
-![System Architecture](assets/architecture.png)
-
-### Core Analysis Class Diagram
-![Class Diagram](assets/class_diagram.png)
-
-### Execution Flowchart
-![Execution Flowchart](assets/flowchart.png)
+- Analysis results are indicators, not a definitive determination of authenticity or intent.
+- A cryptographic hash changes when file bytes change; it does not explain why they changed.
+- Metadata may be absent, stripped, or rewritten by applications and platforms.
+- ELA and tampering heuristics can produce false positives or miss edits, especially after resizing, recompression, or screenshot recapture.
+- OCR and LSB screening depend on image quality, encoding, and implementation limits.
+- Findings should be corroborated with original files, chain-of-custody information, and independent examination where required.
 
 ---
 
-
-## Features
-
-- Register and sign in to the application with role-based access controls.
-- Create and manage investigation cases, case notes, and case sharing.
-- Upload supported PNG, JPEG, and BMP image files to a case, subject to the configured 10 MB per-file limit.
-- Preserve the uploaded file and record MD5, SHA-256, file size, and a perceptual hash where available.
-- Inspect image format, dimensions, color information, and available EXIF/metadata.
-- Run Error Level Analysis (ELA) for supported JPEG images and review its heatmap as a visual aid.
-- Calculate conservative tampering heuristics and an explained screening verdict.
-- Run OCR to extract visible text and candidate URLs, email addresses, phone numbers, IP addresses, amounts, and dates when recognizable.
-- Screen RGB channels for readable text patterns that may be embedded with some sequential LSB techniques.
-- Compare a target screenshot with a reference screenshot from the same case and review the difference map and comparison details.
-- Generate PDF reports and review dashboard, case, and audit information according to account permissions.
-- Expose API documentation through Springdoc at `/swagger-ui.html` when the backend is running.
-
-### Forensic Interpretation Limits
-
-- A matching MD5 or SHA-256 means the file bytes match; it does not establish who created the image or whether it is truthful.
-- Different cryptographic hashes mean the files are not byte-for-byte identical. Re-encoding, resizing, metadata changes, or a single pixel change can cause different hashes without proving malicious editing.
-- ELA is most useful as a review aid for supported JPEG inputs. It can be affected by compression history and is not a definitive detector.
-- LSB screening is limited to patterns the implemented scanner can recognize. A negative result does not rule out encrypted, compressed, non-text, randomized, length-prefixed, or otherwise unsupported hidden payloads.
-- OCR and evidence extraction may miss text or misread characters, especially in small, blurred, stylized, or low-resolution images.
-- Similarity, risk scores, metadata, and heuristics must be interpreted together with source records and other evidence.
-
----
+## Week 3: Requirements and User Roles
 
 ## User Roles
 
-The application defines `ADMIN`, `INVESTIGATOR`, and `VIEWER` roles. Exact access is enforced by the backend security configuration and should be checked there when changing permissions.
+The backend defines the roles `ADMIN`, `INVESTIGATOR`, and `VIEWER`.
 
-| Role | Intended use |
-| :--- | :--- |
-| `ADMIN` | Administrative user management and audit/oversight screens, in addition to permitted application workflows. |
-| `INVESTIGATOR` | Create and work with cases, upload and analyze screenshots, and review results for cases they can access. |
-| `VIEWER` | Read-only review of cases or results made available to the account. |
+- **Administrator:** Performs administrative actions and reviews system-level users or audit information, subject to the configured authorization rules.
+- **Investigator:** Creates and manages cases, uploads screenshots, requests analysis, reviews results, and performs case-level comparison.
+- **Viewer:** Reviews information made available to the viewer by the application’s access rules.
+
+### Functional Requirements
+
+1. Users can sign in and use functions permitted by their role.
+2. Investigators can create and view cases and upload image evidence to a case.
+3. The application can run image analysis and persist associated results.
+4. Users can review extracted metadata, hashes, forensic indicators, and evidence text when available.
+5. A target screenshot can be compared with a reference screenshot belonging to the same case.
+6. Case notes, audit records, and PDF reports support investigation review.
+
+### Non-Functional Requirements
+
+- Validate uploads and handle unsupported or unreadable images with useful errors.
+- Keep uploaded evidence outside the frontend web root using the configured upload directory.
+- Enforce authorization on protected API operations.
+- Return structured API responses that the React application can display.
+- Explain uncertainty and avoid presenting heuristic indicators as proof.
+
+---
+
+## Week 4: System Architecture and Core Modules
+
+## Architecture & Core Modules
+
+### Module 1: Authentication and Authorization
+
+Spring Security and the authentication controllers manage sign-in and role-aware application access. The role model includes administrator, investigator, and viewer permissions.
+
+### Module 2: Case and Evidence Management
+
+Case and screenshot services manage investigation records and the relationship between cases and uploaded files. Evidence metadata is persisted through JPA repositories.
+
+### Module 3: Forensic Analysis
+
+The Java forensic package contains metadata analysis, ELA, OCR/evidence extraction, LSB screening, perceptual hashing, tampering heuristics, and authenticity scoring. These methods provide separate indicators for human review.
+
+### Module 4: Image Comparison
+
+The comparison service and frontend comparison panel support a target-versus-reference workflow. Comparisons are case-scoped so that evidence from a different case is not treated as that case’s reference.
+
+### Module 5: Dashboard, Audit, and Reporting
+
+Dashboard services summarize application activity, audit services record relevant events, and report services generate PDF output for review.
+
+### Module 6: Web Interface
+
+The React/Vite frontend provides landing, authentication, dashboard, case, upload, analysis, profile, administration, audit, and comparison views. A Three.js-based hero scene is also present in the frontend.
 
 ---
 
-## Architecture and Core Modules
-
-### 1. Web User Interface
-
-The React 18 application uses Vite, React Router, and Axios. It provides authentication, dashboards, case screens, upload and analysis pages, comparison controls, and report access. The Vite development server proxies `/api` requests to the backend.
-
-### 2. Authentication and Authorization
-
-The Spring Security configuration protects backend endpoints and supports the application's session-based login flow. Roles distinguish administration, investigation, and read-only access. Passwords are handled by the backend security layer; never add credentials or production secrets to this README or source control.
-
-### 3. Case and Evidence Management
-
-Spring MVC controllers and services manage cases, notes, case sharing, screenshot records, and access checks. Uploaded evidence files are stored under `${user.home}/dfsa-uploads` by default, outside the frontend's public directory.
-
-### 4. Forensic Analysis
-
-The analysis services use Metadata Extractor for image metadata, hashing utilities for file fingerprints, ELA and tamper-heuristic components for review indicators, Tess4J/Tesseract for OCR, and an LSB screening component for supported readable text patterns. Unsupported operations and limitations should be visible in the returned explanation rather than interpreted as a clean bill of authenticity.
-
-### 5. Same-Case Image Comparison
-
-The comparison service compares a target screenshot to a selected reference screenshot and persists the result and difference-map details. Both screenshots must belong to the same case. Comparison findings describe visual differences; they do not alone identify which image is the original or prove intent.
-
-### 6. Reporting and Oversight
-
-The report service creates PDF reports from stored case and analysis data. Dashboard and admin/audit services provide activity summaries and oversight information for users with the required access.
-
----
+## Week 5: Technology and Database Design
 
 ## Tech Stack
 
-| Area | Technologies |
+| Layer | Technology |
 | :--- | :--- |
-| Backend | Java 17, Spring Boot 3.2, Spring MVC, Spring Data JPA, Spring Security, Bean Validation |
-| Build | Maven; Maven Wrapper is included under `backend/` |
-| Database | MySQL with SQL schema initialization and JPA repositories |
-| Frontend | React 18, JavaScript, Vite 4, React Router, Axios |
-| UI and visualization libraries | Bootstrap, Framer Motion, Recharts, Three.js, React Three Fiber, Drei, Troika Three Text |
-| Forensic libraries | Metadata Extractor, Tess4J/Tesseract, Apache Commons Codec, OpenPDF |
-| API documentation | Springdoc OpenAPI / Swagger UI |
-| Tests | JUnit/Spring Boot Test, Mockito, Spring Security Test, frontend production build |
+| Backend language | Java 17 |
+| Backend framework | Spring Boot 3.2.0, Spring MVC |
+| Persistence | Spring Data JPA, Hibernate |
+| Database | MySQL |
+| Security | Spring Security, role-based access control |
+| Image metadata | metadata-extractor |
+| OCR | Tess4J / Tesseract integration |
+| PDF reports | OpenPDF |
+| Hash utilities | Apache Commons Codec and Java security APIs |
+| Frontend | React 18, Vite, JavaScript, HTML, and CSS |
+| UI and visualization libraries | Bootstrap, Framer Motion, Recharts, Three.js, React Three Fiber, and Drei |
+| Build tools | Maven and npm |
 
----
+## Database Design
 
-## UML / Architecture Diagram
-
-```mermaid
-flowchart LR
-    U[Investigator or administrator] --> UI[React and Vite web client]
-    UI -->|HTTP /api requests| API[Spring Boot REST API]
-    API --> SEC[Spring Security and role checks]
-    API --> CASE[Case and screenshot services]
-    CASE --> DB[(MySQL database)]
-    CASE --> FS[Evidence files outside web root]
-    CASE --> ANALYSIS[Forensic analysis services]
-    ANALYSIS --> META[Metadata and image properties]
-    ANALYSIS --> HASH[MD5, SHA-256 and perceptual hash]
-    ANALYSIS --> ELA[ELA and tamper heuristics]
-    ANALYSIS --> OCR[OCR and evidence extraction]
-    ANALYSIS --> LSB[LSB text-pattern screening]
-    ANALYSIS --> DB
-    CASE --> COMP[Same-case comparison service]
-    COMP --> FS
-    COMP --> DB
-    API --> PDF[PDF report service]
-    PDF --> DB
-    PDF --> U
-```
-
----
-
-## Database and Data Flow Design
-
-### Entity Relationship Diagram
+The application models users, roles, cases, screenshots, analysis results, extracted evidence, comparison results, case notes, case shares, audit logs, and login attempts. The exact installed schema is defined by the entity mappings and database configuration in the backend.
 
 ```mermaid
 erDiagram
-    USERS ||--o{ CASES : investigates
-    USERS ||--o{ CASE_SHARES : receives_or_shares
-    CASES ||--o{ CASE_SHARES : shared_as
-    CASES ||--o{ SCREENSHOTS : contains
-    SCREENSHOTS ||--o| ANALYSIS_RESULTS : has
-    SCREENSHOTS ||--o{ EXTRACTED_EVIDENCE : yields
-    CASES ||--o{ CASE_NOTES : has
-    USERS ||--o{ CASE_NOTES : writes
-    USERS ||--o{ AUDIT_LOGS : generates
-    SCREENSHOTS ||--o{ COMPARISON_RESULTS : reference_image
-    SCREENSHOTS ||--o| COMPARISON_RESULTS : target_image
-
-    USERS {
-        BIGINT id PK
-        VARCHAR username UK
-        VARCHAR email UK
-        VARCHAR role
-        BOOLEAN enabled
-    }
-    CASES {
-        BIGINT id PK
-        VARCHAR case_number UK
-        VARCHAR title
-        VARCHAR priority
-        VARCHAR status
-        BIGINT investigator_id FK
-    }
-    SCREENSHOTS {
-        BIGINT id PK
-        BIGINT case_id FK
-        VARCHAR original_filename
-        VARCHAR md5
-        VARCHAR sha256
-        VARCHAR perceptual_hash
-        VARCHAR status
-    }
-    ANALYSIS_RESULTS {
-        BIGINT id PK
-        BIGINT screenshot_id FK
-        VARCHAR verdict
-        INT authenticity_score
-        JSON metadata_json
-        JSON tamper_heuristics_json
-        TEXT ocr_text
-    }
-    EXTRACTED_EVIDENCE {
-        BIGINT id PK
-        BIGINT screenshot_id FK
-        VARCHAR evidence_type
-        VARCHAR confidence
-        TEXT raw_text
-    }
-    CASE_SHARES {
-        BIGINT id PK
-        BIGINT case_id FK
-        BIGINT shared_with_user_id FK
-        BIGINT shared_by_user_id FK
-    }
-    CASE_NOTES {
-        BIGINT id PK
-        BIGINT case_id FK
-        BIGINT user_id FK
-        TEXT note
-    }
-    AUDIT_LOGS {
-        BIGINT id PK
-        BIGINT user_id FK
-        VARCHAR action
-        VARCHAR entity_type
-    }
-    COMPARISON_RESULTS {
-        BIGINT id PK
-        BIGINT reference_screenshot_id FK
-        BIGINT target_screenshot_id FK
-        BOOLEAN visual_difference_detected
-        TEXT changed_regions_details
-    }
+    USER ||--o{ CASE : investigates
+    USER ||--o{ CASE_SHARE : grants_or_receives
+    CASE ||--o{ SCREENSHOT : contains
+    SCREENSHOT ||--o| ANALYSIS_RESULT : has
+    SCREENSHOT ||--o{ EXTRACTED_EVIDENCE : yields
+    SCREENSHOT ||--o{ COMPARISON_RESULT : target_or_reference
+    USER ||--o{ CASE_NOTE : writes
+    USER ||--o{ AUDIT_LOG : generates
+    USER ||--o{ LOGIN_ATTEMPT : records
+    ROLE ||--o{ USER : assigned_to
 ```
 
-### Analysis Data Flow
+## Data Flow
 
 ```mermaid
-flowchart TD
-    A[User selects a case and image] --> B[Frontend sends multipart upload]
-    B --> C[Backend validates request and image]
-    C -->|Rejected| X[Return a useful validation error]
-    C -->|Accepted| D[Store evidence file and screenshot record]
-    D --> E[Calculate hashes and image properties]
-    E --> F[Run supported metadata, ELA, heuristic, OCR and LSB checks]
-    F --> G[Persist analysis result and extracted evidence]
-    G --> H[Frontend displays findings, limitations and visual artifacts]
-    H --> I[Optional: choose a reference from the same case]
-    I --> J[Compare reference and target; persist comparison result]
-    J --> K[Review difference details or generate PDF report]
+flowchart LR
+    A[Investigator in React UI] --> B[Spring Boot REST API]
+    B --> C[Validate image and case access]
+    C --> D[Store original evidence file]
+    C --> E[Create screenshot record]
+    E --> F[Forensic analysis services]
+    F --> G[Metadata, hashes, ELA, OCR, LSB, heuristics]
+    G --> H[(MySQL via JPA)]
+    H --> I[Analysis result and evidence views]
+    I --> J[Human review / PDF report]
+    E --> K[Same-case reference comparison]
+    K --> H
 ```
 
 ---
 
-## UI Screenshots
+## Week 6: Frontend and Case Workflow
 
-Add current screenshots of the running application to the `image/` folder using these exact names:
+### Role & Scope of Work
 
-![Home page](image/home.png)
+The team connected the React application pages to the case and screenshot workflow exposed by the backend. Work in this phase covers navigation, authentication screens, case lists and details, upload screens, and display of analysis status.
 
-![Upload page](image/upload.png)
+### Main Deliverables
 
-![Analysis result page](image/result.png)
+- React routes and pages for landing, login, registration, dashboard, cases, upload, profile, and analysis.
+- Reusable layout and navigation components, including the sidebar and image-inspection components.
+- API integration for creating or opening cases and submitting screenshots.
+- User-facing handling of loading, empty, and error states.
 
-The screenshot files were not present in the repository when this README was prepared. Replace these placeholders after capturing the pages from a running local application.
+### Problems and Responses
+
+1. **Frontend and backend run on different local ports:** CORS configuration is required for the local Vite origins configured by the backend.
+2. **Upload and analysis are asynchronous:** The interface must show the current status and retrieve the persisted result rather than assuming analysis is complete immediately.
+3. **Large or unsupported files can fail:** The backend multipart limits and image validation should be communicated through clear UI feedback.
+
+---
+
+## Week 7: Image Metadata, Hashing, and Evidence Preservation
+
+### Role & Scope of Work
+
+This phase focuses on file intake and the evidence record. Uploaded files are linked to a case, stored under the configured upload directory, and represented by database records. The analysis modules extract image properties and calculate file fingerprints used to distinguish exact file equality from visual similarity.
+
+### Main Deliverables
+
+- Screenshot upload and case association.
+- Metadata extraction through the metadata analysis module.
+- Cryptographic hash generation for file fingerprinting.
+- File utility validation and storage support.
+- Persistence of screenshot and analysis records.
+
+### Problems and Responses
+
+1. **Metadata may be missing:** Display unavailable metadata as unavailable; do not infer that missing metadata proves manipulation.
+2. **Identical-looking files can have different bytes:** Explain cryptographic hashes as exact-file fingerprints and use perceptual comparison for visual similarity.
+3. **Evidence files must remain accessible:** Keep the upload directory configurable and store a database reference rather than relying on a temporary browser path.
+
+---
+
+## Week 8: Forensic Indicators and Evidence Extraction
+
+### Role & Scope of Work
+
+The forensic-analysis phase combines independent checks. ELA, metadata, OCR, LSB screening, perceptual hashing, and tampering heuristics are implemented as distinct analysis components, then coordinated by the analysis service.
+
+### Main Deliverables
+
+- Error Level Analysis output for supported image formats.
+- OCR-based text and evidence extraction.
+- LSB steganography screening.
+- Perceptual hash generation for near-duplicate comparisons.
+- Heuristic scoring and result mapping for the UI.
+
+### Problems and Responses
+
+1. **ELA depends on image format and compression:** Clearly indicate when ELA is unsupported or unavailable and avoid showing an empty or misleading preview.
+2. **OCR can misread small or low-quality text:** Treat OCR output as extracted evidence requiring human verification.
+3. **Heuristic indicators are not certainty:** Present explanations and limitations alongside scores and avoid claiming a perfect authenticity verdict.
+
+---
+
+## Week 9: Same-Case Comparison and Results Interface
+
+### Role & Scope of Work
+
+This phase connects reference-image selection, comparison execution, persistence, and visualization. The comparison workflow is limited to screenshots in the selected case and reports the measured file or visual differences supported by the implementation.
+
+### Main Deliverables
+
+- Reference selection and target/reference comparison controls.
+- Case-scoped reference options and backend ownership/access checks.
+- Comparison result persistence and display.
+- Image inspector with zoom and comparison visualization.
+- Analysis-result page with evidence, indicators, and result explanation.
+
+### Problems and Responses
+
+1. **Comparing across unrelated cases can mislead:** Restrict selectable references to the current case and validate case membership on the server.
+2. **Images may have different dimensions:** Normalize or align images for visual comparison and disclose the normalization used.
+3. **Raw pixel differences are sensitive to resizing and compression:** Describe visual difference output as a comparison aid, not proof of tampering.
+
+---
+
+## Week 10: Security, Audit, Dashboard, and Reports
+
+### Role & Scope of Work
+
+This phase covers access controls and supporting investigation features. The backend includes security, case access, audit logging, dashboard services, and PDF report generation. Administrative pages expose user and audit workflows when authorized.
+
+### Main Deliverables
+
+- Role-aware APIs for administrator, investigator, and viewer roles.
+- Case-sharing and access-control services.
+- Audit events and login-attempt records.
+- Dashboard statistics and recent activity views.
+- PDF report generation for analysis results.
+
+### Problems and Responses
+
+1. **Direct API calls can bypass hidden UI controls:** Enforce authorization at the backend endpoint and service layer.
+2. **Sensitive configuration should not be committed:** Supply database and deployment settings through local configuration or environment variables; never document real passwords.
+3. **A report can overstate a heuristic:** Include evidence values and uncertainty rather than claiming a definitive forensic conclusion.
+
+---
+
+## Week 11: Testing and Integration Review
+
+### Testing Coverage Present in the Repository
+
+The backend contains tests for authenticity scoring, ELA, LSB analysis, metadata analysis, BCrypt behavior, analysis service, case access, comparison service, screenshot service, and file utilities. These test files show intended coverage; a successful current test run must be confirmed in the target environment before claiming the project passes.
+
+### Integration Checklist
+
+- Verify MySQL is available and the configured database is correct.
+- Verify the backend starts on its configured port and the frontend can reach it.
+- Verify registration or login and role-specific access.
+- Create one case, upload a supported image, and confirm the screenshot record is visible.
+- Run analysis and confirm its result loads after completion or refresh.
+- Upload a second image into the same case and compare only those case images.
+- Try invalid, unsupported, oversized, and unreadable files and check for useful errors.
+- Review generated PDF output, audit records, and image previews.
+
+### Common Integration Issues and Responses
+
+1. **Dashboard or API request fails:** Check backend availability, frontend API base URL, CORS origins, database status, and browser network response.
+2. **Analysis remains pending:** Check backend logs and persisted analysis status; ensure asynchronous failures are surfaced and retried or marked failed rather than silently left pending.
+3. **Image preview is blank:** Verify the stored-file endpoint, content type, authorization, and configured upload path.
+
+---
+
+## Week 12: Final Evaluation and Deliverables
+
+### Project Deliverables
+
+- Java 17 / Spring Boot backend source.
+- React/Vite frontend source.
+- MySQL entity and repository layer.
+- Screenshot case-management and analysis workflows.
+- Forensic indicator modules and test sources.
+- Comparison, dashboard, audit, and report features.
+- This README as project and phase documentation.
+
+### Final Evaluation Criteria
+
+- A user can authenticate and access permitted pages.
+- An investigator can create a case, upload supported images, and retrieve analysis results.
+- Analysis output includes available evidence and explains unsupported or uncertain checks.
+- Comparison only uses images from the same case and returns a readable result.
+- Failures are visible to the user and diagnosable from application logs.
+- README setup instructions match the actual repository layout and avoid secret values.
+
+### Team Module Distribution
+
+| Member | Module / Responsibility | Key Deliverables |
+| :--- | :--- | :--- |
+| Rohit Suthar | Team coordination, backend integration, analysis workflow, and comparison | API/service integration, case workflow coordination, same-case comparison review |
+| Ritika Sharma | Frontend UI/UX | React/Vite pages, navigation, upload and results interface, responsive UI |
+| Ronak Thadani | Case and database workflow | Case/evidence persistence, JPA entities and repositories, related API support |
+| Tanishk | Image-forensics analysis | Metadata, hashing, ELA, OCR, LSB screening, perceptual and heuristic modules |
+| Rishi | Testing and documentation | Test planning and review, workflow verification, project documentation |
+
+The table records the project’s planned responsibility split and should not be treated as a statement of individual Git authorship.
 
 ---
 
 ## Project Directory Structure
 
 ```text
-dfsa/
-├── backend/
-│   ├── .mvn/wrapper/
-│   ├── mvnw
-│   ├── mvnw.cmd
-│   ├── pom.xml
-│   ├── tessdata/
-│   └── src/
-│       ├── main/java/com/dfsa/
-│       │   ├── config/       # Security and application configuration
-│       │   ├── controller/   # REST endpoints
-│       │   ├── dto/          # API request/response objects
-│       │   ├── forensic/     # Image analysis algorithms
-│       │   ├── mapper/       # Entity and DTO mapping
-│       │   ├── model/        # JPA entities and roles
-│       │   ├── repository/   # Persistence queries
-│       │   ├── security/     # Authentication support
-│       │   ├── service/      # Application workflows
-│       │   └── util/         # Shared utilities
-│       ├── main/resources/   # Properties, schema.sql, and data.sql
-│       └── test/             # Backend tests
-├── frontend/
-│   ├── package.json
-│   ├── vite.config.js
-│   └── src/
-│       ├── api/
-│       ├── components/
-│       ├── context/
-│       ├── hooks/
-│       ├── pages/
-│       ├── routes/
-│       ├── styles/
-│       └── three/
-├── maven/                    # Maven distribution files in this repository
-├── .gitignore
-└── README.md
-```
-
----
-
-## Module-wise Work Distribution
-
-| Member | Module | Key deliverables |
-| :--- | :--- | :--- |
-| Rohit Suthar | Team leadership and backend integration | Coordinate branch integration, authentication/security, case and screenshot workflows, and end-to-end application integration. |
-| Ritika Sharma | Frontend and UI/UX | React pages and reusable UI, responsive case/upload/result screens, API connection, and user-facing error/loading states. |
-| Ronak Thadani | Case and database workflow | MySQL/JPA case data model coordination, case lifecycle, persistence checks, and data consistency review. |
-| Tanishk | Forensic analysis | Metadata and image properties, hashing, ELA/tamper indicators, OCR evidence extraction, and LSB screening. |
-| Rishi | Testing and reporting | Test scenarios for login, case/upload/analyze/compare/report flows; regression checks; and clear documentation of limitations and defects. |
-
----
-
-## Week-wise Project Report and Development History
-
-The available repository history records changes on **October 7 and October 9, 2026**. It does not verify a 12-week calendar schedule, so the entries below are grouped by development phase rather than presented as invented academic week dates. The commit history currently attributes the listed commits to the repository account `RohitSuthar01`; the responsibility table above is the planned team allocation.
-
-| Phase | Work recorded in the repository | Result |
-| :--- | :--- | :--- |
-| Phase 1 — Backend foundation (Oct 7) | Backend forensic overhaul, API and service work, OCR setup, and ELA fixes. | Backend workflows and analysis components were advanced. |
-| Phase 2 — Frontend integration (Oct 7) | Frontend changes for the application screens and backend integration. | React interface updates were committed. |
-| Phase 3 — Comparison workflow (Oct 9) | Comparison eligibility, error handling, UI behavior, difference metrics, and persistence/schema fixes. | Same-case reference-image comparison was added and refined. |
-| Phase 4 — Analysis refinements (Oct 9) | Forensic analysis improvements, LSB screening, image fingerprints, and comparison-related updates. | More analysis indicators and evidence comparison details were added. |
-| Phase 5 — Configuration and data access (Oct 9) | Application configuration loading and custom JPA query improvements. | Backend configuration and selected user queries were refined. |
-
-For a formal weekly submission, replace these phases with the team's verified week numbers and dated work logs. Do not infer individual contributions from the shared branch history alone.
-
----
-
-## Testing and Challenges
-
-| Module | Common challenge | Handling / verification approach |
-| :--- | :--- | :--- |
-| Upload and evidence storage | Rejecting invalid images and avoiding filename/path problems; keeping evidence separate from public frontend files. | Validate file content and supported types, retain a generated stored name, store outside the web root, and test boundary sizes and invalid uploads. |
-| Metadata and hashes | Many screenshots have no EXIF; byte hashes change after harmless re-encoding. | Show available metadata without treating missing EXIF as failure; distinguish exact-file hashes from visual similarity. |
-| ELA and heuristics | ELA can be unsupported for non-JPEG images and image compression can create misleading patterns. | Report whether ELA ran, expose the output as a review aid, and explain limitations instead of deriving a definitive verdict from ELA alone. |
-| OCR and evidence extraction | Small, blurred, or stylized text may be missed or misread; OCR runtime data must be available. | Use the configured Tess4J/Tesseract language data, handle OCR failures as analysis limitations, and manually review extracted evidence. |
-| LSB screening | A scanner cannot recognize every steganography method or encrypted payload. | Describe the implemented scan as limited pattern screening; test known supported text fixtures and avoid claiming a negative scan proves absence. |
-| Image comparison | Cross-case comparison can mix unrelated evidence; changed dimensions and re-encoding complicate pixel differences. | Enforce same-case selection, reject invalid/self comparisons, persist the method and limitations, and test identical and altered fixture pairs. |
-| Authentication and persistence | Incorrect role access or database configuration can break application workflows. | Verify role-protected routes and configure MySQL before starting; keep real credentials out of committed documentation and source files. |
-
-### Test Commands
-
-Run backend unit tests:
-
-```powershell
-cd backend
-./mvnw test
-```
-
-On Windows Command Prompt, use:
-
-```cmd
-cd backend
-mvnw.cmd test
-```
-
-Build the frontend:
-
-```powershell
-cd frontend
-npm ci
-npm run build
+ScreenShot_Detector/
+├── dfsa/
+│   ├── backend/
+│   │   ├── pom.xml
+│   │   └── src/
+│   │       ├── main/java/com/dfsa/
+│   │       │   ├── config/
+│   │       │   ├── controller/
+│   │       │   ├── dto/
+│   │       │   ├── exception/
+│   │       │   ├── forensic/
+│   │       │   ├── mapper/
+│   │       │   ├── model/
+│   │       │   ├── repository/
+│   │       │   ├── security/
+│   │       │   ├── service/
+│   │       │   └── util/
+│   │       ├── main/resources/
+│   │       └── test/java/com/dfsa/
+│   └── frontend/
+│       ├── package.json
+│       ├── vite.config.js
+│       └── src/
+│           ├── api/
+│           ├── components/
+│           ├── context/
+│           ├── hooks/
+│           ├── pages/
+│           ├── routes/
+│           ├── styles/
+│           └── three/
+├── README.md
+└── SUMMARY.md
 ```
 
 ---
@@ -387,79 +386,97 @@ npm run build
 
 ### Prerequisites
 
-- Java 17
-- MySQL 8 or a compatible MySQL server
-- Node.js and npm
-- A Git client
-- Tesseract language data for OCR; the repository includes `backend/tessdata/eng.traineddata`, but native/runtime setup may still depend on the operating system.
+- Java Development Kit (JDK) 17
+- Maven 3.8+ (or the Maven wrapper if present)
+- Node.js and npm compatible with the Vite project
+- MySQL 8.x
+- Tesseract OCR installed and configured for Tess4J if OCR is enabled
 
-### 1. Clone the Repository
+### 1. Configure MySQL
 
-```powershell
-git clone https://github.com/RohitSuthar01/Digital-Forensic-Screenshot-Analyzer.git
-cd Digital-Forensic-Screenshot-Analyzer
+Create a MySQL database named `dfsa`. Configure `DB_URL`, database username, and database password for the backend. Keep credentials private and out of Git.
+
+### 2. Start the Backend
+
+```bash
+cd dfsa/backend
+mvn spring-boot:run
 ```
 
-### 2. Create the Database
+The checked-in configuration uses port `8091` by default. Confirm the effective configuration in `src/main/resources/application.properties` before running.
 
-Create a MySQL database named `dfsa` using your MySQL client:
+### 3. Start the Frontend
 
-```sql
-CREATE DATABASE dfsa;
-```
+Open a second terminal:
 
-The backend initializes its tables from `backend/src/main/resources/schema.sql` when it starts. Configure the database URL, username, and password locally using environment-specific configuration. Do not commit real passwords. The checked-in application properties currently contain a database password and should be changed to use environment variables before sharing or publishing this repository.
-
-### 3. Start the Backend
-
-In PowerShell, set your local database values for this terminal session, then start Spring Boot:
-
-```powershell
-cd backend
-$env:SPRING_DATASOURCE_URL = "jdbc:mysql://localhost:3306/dfsa?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true"
-$env:SPRING_DATASOURCE_USERNAME = "your_mysql_username"
-$env:SPRING_DATASOURCE_PASSWORD = "your_mysql_password"
-./mvnw spring-boot:run
-```
-
-The API listens on `http://localhost:8091`. Swagger UI is configured at `http://localhost:8091/swagger-ui.html`.
-
-### 4. Start the Frontend
-
-Open a second terminal from the repository root:
-
-```powershell
-cd frontend
-npm ci
+```bash
+cd dfsa/frontend
+npm install
 npm run dev
 ```
 
-Open the local URL printed by Vite, normally `http://localhost:5188`. The development server proxies `/api` requests to `http://localhost:8091` by default. Set `DFSA_API_PROXY_TARGET` if your backend uses another local address.
+Open the local URL printed by Vite. The backend CORS configuration must allow that frontend origin.
 
-### 5. Use the Analyzer
+### 4. Run Backend Tests
 
-1. Register or sign in with an account permitted by the application.
-2. Create or open a case.
-3. Upload a supported screenshot and wait for processing to finish.
-4. Review the analysis details, image properties, hashes, and any available ELA/OCR/LSB results.
-5. To compare images, select a reference screenshot from the same case as the target and run the comparison.
-6. Review the comparison map and limitations; download a PDF report if needed.
+```bash
+cd dfsa/backend
+mvn test
+```
+
+Test results depend on the local Java, Maven, database, and OCR environment. Review the test output instead of assuming a passing result.
+
+---
+
+## UI Screenshots
+
+The following development screenshots show the case evidence list, the analysis and reference-comparison interface, and analysis results inside a case. The analysis values shown are examples of the application UI at the time of capture; they are not independent ground-truth validation of the forensic verdict.
+
+### Case Evidence
+
+The case page groups uploaded screenshots under a single investigation and exposes each item’s status and analysis actions.
+
+![Case evidence list](image/case-evidence.png)
+
+### Analysis and Reference Comparison
+
+The analysis view displays the current verdict and score, and provides a selector for choosing a reference screenshot for comparison.
+
+![Analysis and reference comparison interface](image/analysis-comparison.png)
+
+### Case Analysis Results
+
+The case results table summarizes uploaded images and their current analysis status, verdict, and score.
+
+![Case analysis results](image/case-results.png)
 
 ---
 
 ## Future Scope
 
-- Add a reproducible labeled evaluation set and publish precision/recall results for each supported detection method.
-- Improve analysis provenance with versioned algorithms, complete processing logs, and chain-of-custody export.
-- Add more robust OCR language selection and clearer reporting of OCR confidence and failures.
-- Extend image comparison with explicit alignment and robust handling of different dimensions, while retaining the original files.
-- Add broader steganalysis methods with clearly measured limits and test fixtures.
-- Add automated end-to-end tests for authentication, case isolation, uploading, analysis, same-case comparisons, and report downloads.
-- Move database credentials to environment variables or a secrets manager and configure deployment-grade session, CORS, and logging settings.
-- Add a documented license after the project owners choose one.
+- Add a documented chain-of-custody export with file hashes and timestamped events.
+- Improve comparison reports with clear metric definitions and region-level annotations.
+- Add configurable batch analysis with queue status and recovery for failed jobs.
+- Expand test fixtures for JPEG, PNG, WebP, resized images, recompressed images, and known edited samples.
+- Improve calibration and explainability of heuristic scores using a labeled evaluation dataset.
+- Add deployment guidance, observability, and secure secret management for production.
+
+---
+
+## References
+
+- [Spring Boot Reference Documentation](https://docs.spring.io/spring-boot/)
+- [Spring Security Reference](https://docs.spring.io/spring-security/reference/)
+- [React Documentation](https://react.dev/)
+- [Vite Documentation](https://vite.dev/guide/)
+- [Metadata Extractor](https://github.com/drewnoakes/metadata-extractor)
+- [Tess4J](https://github.com/nguyenq/tess4j)
+- [OpenPDF](https://github.com/LibrePDF/OpenPDF)
+- [Apache Commons Codec](https://commons.apache.org/proper/commons-codec/)
+- [MySQL Documentation](https://dev.mysql.com/doc/)
 
 ---
 
 ## License
 
-No `LICENSE` file was present in the repository when this README was prepared. All rights and permissions therefore remain unspecified; add a license file only after the project owners select the intended license.
+No license file was identified in the project root when this README was prepared. Add a license file and update this section if the project is distributed under a specific license.
