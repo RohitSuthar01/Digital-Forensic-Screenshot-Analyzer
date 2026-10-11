@@ -14,7 +14,6 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/admin")
 @PreAuthorize("hasRole('ADMIN')")
-@CrossOrigin(origins = {"http://localhost:5173", "http://localhost:5188"}, allowCredentials = "true")
 public class AdminController {
 
     @Autowired

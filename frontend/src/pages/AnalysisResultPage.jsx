@@ -18,15 +18,61 @@ const AnalysisResultPage = () => {
   const [screenshot, setScreenshot] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [analysisStatus, setAnalysisStatus] = useState('');
 
   useEffect(() => {
-    axios.get(`/api/screenshots/${screenshotId}/analysis`, { withCredentials: true })
-      .then(r => setResult(r.data))
-      .catch(() => setError('Failed to load analysis result.'))
-      .finally(() => setLoading(false));
-    axios.get(`/api/screenshots/${screenshotId}`, { withCredentials: true })
-      .then(r => setScreenshot(r.data))
-      .catch(() => setScreenshot(null));
+    let cancelled = false;
+    let pollTimer;
+    const wait = (ms) => new Promise(resolve => { pollTimer = window.setTimeout(resolve, ms); });
+
+    const loadResult = async () => {
+      setLoading(true);
+      setError('');
+      setResult(null);
+      setAnalysisStatus('Checking analysis status…');
+      try {
+        for (let attempt = 0; attempt < 120 && !cancelled; attempt += 1) {
+          const screenshotResponse = await axios.get(`/api/screenshots/${screenshotId}`, { withCredentials: true });
+          const currentScreenshot = screenshotResponse.data;
+          if (cancelled) return;
+          setScreenshot(currentScreenshot);
+
+          if (currentScreenshot.status === 'FAILED') {
+            throw new Error(currentScreenshot.errorMessage || 'Analysis failed. Please retry from the case page.');
+          }
+
+          if (currentScreenshot.status === 'COMPLETED') {
+            try {
+              const resultResponse = await axios.get(`/api/screenshots/${screenshotId}/analysis`, { withCredentials: true });
+              if (cancelled) return;
+              setResult(resultResponse.data);
+              setAnalysisStatus('Analysis complete.');
+              setLoading(false);
+              return;
+            } catch (resultError) {
+              // The screenshot status can be committed just before its result is visible.
+              if (resultError.response?.status !== 404) throw resultError;
+            }
+          }
+
+          setAnalysisStatus(currentScreenshot.status === 'PROCESSING'
+            ? 'Analysis is running. This page will update automatically…'
+            : 'Analysis is queued. Waiting for it to start…');
+          if (attempt < 119) await wait(1000);
+        }
+        if (!cancelled) throw new Error('Analysis is taking longer than expected. Refresh this page to check again.');
+      } catch (loadError) {
+        if (!cancelled) {
+          setError(loadError.response?.status === 403
+            ? 'You do not have access to this screenshot.'
+            : (loadError.message || 'Failed to load analysis result.'));
+          setLoading(false);
+        }
+      }
+    };
+
+    loadResult();
+    return () => { cancelled = true; window.clearTimeout(pollTimer); };
   }, [screenshotId]);
 
   const score = result?.authenticityScore ?? 0;
@@ -37,7 +83,7 @@ const AnalysisResultPage = () => {
   if (loading) return (
     <div className="app-layout"><Sidebar />
       <div className="main-content"><div className="loading-screen" style={{ minHeight: '100vh' }}>
-        <div className="spinner" /><span>Loading analysis results…</span>
+        <div className="spinner" /><span>{analysisStatus || 'Loading analysis results…'}</span>
       </div></div>
     </div>
   );
@@ -58,6 +104,7 @@ const AnalysisResultPage = () => {
 
         <div className="page-body">
           {error && <div className="alert alert-error">{error}</div>}
+          {loading && <div className="alert alert-info" role="status">{analysisStatus}</div>}
 
           {result && (
             <>
