@@ -15,13 +15,13 @@
 
 ### Team Members
 
-| Member | RTU Roll Number | Project Role |
-| :--- | :--- | :--- |
-| Rohit Suthar | 24EARCS138 | Team lead, backend integration, analysis workflow, and case comparison |
-| Ritika Sharma | 24EARCS136 | React frontend, user experience, upload and analysis pages |
-| Ronak Thadani | 24EARCS139 | Case and database workflow, persistence, and backend support |
-| Tanishk | 24EARCS172 | Image-forensics methods, metadata, hashes, ELA, OCR, and LSB screening |
-| Rishi | 24EARCS133 | Test planning, workflow verification, report review, and documentation |
+| Member | RTU Roll Number | Project Role | Email | Mobile |
+| :--- | :--- | :--- | :--- | :--- |
+| Rohit Suthar | 24EARCS138 | Team lead, backend integration, analysis workflow, and case comparison | rohitsutharrr@gmail.com | 7426033714 |
+| Ritika Sharma | 24EARCS136 | React frontend, user experience, upload and analysis pages | ritikasharmapinjor@gmail.com | 9138266159 |
+| Ronak Thadani | 24EARCS139 | Case and database workflow, persistence, and backend support | thadanir8@gmail.com | 8000387244 |
+| Tanishk | 24EARCS172 | Image-forensics methods, metadata, hashes, ELA, OCR, and LSB screening | tanishk.99s99@gmail.com | 9461116756 |
+| Rishi | 24EARCS133 | Test planning, workflow verification, report review, and documentation | Not provided | 8441000770 |
 
 ### Problem Statement
 
