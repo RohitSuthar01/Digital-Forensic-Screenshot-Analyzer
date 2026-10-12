@@ -7,11 +7,11 @@ import com.dfsa.model.Screenshot;
 import com.dfsa.forensic.*;
 import com.dfsa.repository.AnalysisResultRepository;
 import com.dfsa.repository.ScreenshotRepository;
-import com.dfsa.util.FileUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.Date;
@@ -22,58 +22,42 @@ import java.util.LinkedHashMap;
 
 @Service
 public class AnalysisService {
+    private static final Logger log = LoggerFactory.getLogger(AnalysisService.class);
 
     @Autowired
     private ScreenshotRepository screenshotRepository;
-
     @Autowired
     private AnalysisResultRepository analysisResultRepository;
-
     @Autowired
     private MetadataAnalyzer metadataAnalyzer;
-
     @Autowired
     private LsbSteganographyAnalyzer lsbSteganographyAnalyzer;
-
     @Autowired
     private ErrorLevelAnalysis errorLevelAnalysis;
-
     @Autowired
     private TamperHeuristics tamperHeuristics;
-
     @Autowired
     private OCRAndEvidenceExtractor ocrAndEvidenceExtractor;
-
     @Autowired
     private PerceptualHash perceptualHash;
-
     @Autowired
     private AuthenticityScorer authenticityScorer;
 
-    /**
-     * Perform forensic analysis on a screenshot asynchronously.
-     *
-     * @param screenshotId the ID of the screenshot to analyze
-     */
+    /** Perform forensic analysis on a screenshot asynchronously. */
     @Async
-    @Transactional
     public void analyzeScreenshot(Long screenshotId) {
         Screenshot screenshot = screenshotRepository.findById(screenshotId)
                 .orElseThrow(() -> new RuntimeException("Screenshot not found"));
 
-        // Update status to PROCESSING
         screenshot.setStatus(Screenshot.Status.PROCESSING);
-        screenshotRepository.save(screenshot);
+        screenshotRepository.saveAndFlush(screenshot);
 
         try {
-            // 1. Compute and store perceptual hash
             String perceptualHashHex = perceptualHash.getHashHex(screenshot);
             screenshot.setPerceptualHash(perceptualHashHex);
 
-            // 2. Metadata analysis
             Map<String, Object> metadataResult = metadataAnalyzer.analyze(screenshot);
 
-            // 2a. Search common sequential LSB channel patterns for readable text.
             Map<String, Object> lsbResult;
             try {
                 lsbResult = lsbSteganographyAnalyzer.analyze(new java.io.File(screenshot.getFilePath()));
@@ -86,7 +70,6 @@ public class AnalysisService {
             }
             metadataResult.put("lsbSteganography", lsbResult);
 
-            // 3. Error Level Analysis (if applicable)
             String elaImageFileName = null;
             Map<String, Object> moduleStatuses = new LinkedHashMap<>();
             moduleStatuses.put("metadata", metadataResult.getOrDefault("metadataStatus", "UNAVAILABLE"));
@@ -98,7 +81,6 @@ public class AnalysisService {
                 moduleStatuses.put("ela", "FAILED");
             }
 
-            // 4. Tamper heuristics
             Map<String, Object> tamperResult;
             try {
                 tamperResult = tamperHeuristics.analyze(screenshot);
@@ -110,8 +92,7 @@ public class AnalysisService {
                 moduleStatuses.put("tamperAssessment", "FAILED");
             }
 
-            // 5. OCR and evidence extraction
-            Map<String, Object> ocrResult = null;
+            Map<String, Object> ocrResult;
             try {
                 ocrResult = ocrAndEvidenceExtractor.analyze(screenshot);
             } catch (Exception e) {
@@ -121,15 +102,9 @@ public class AnalysisService {
             moduleStatuses.put("ocr", ocrResult.containsKey("error") ? "FAILED" : "COMPLETED");
             tamperResult.put("moduleStatuses", moduleStatuses);
 
-            // 6. Compute authenticity score and verdict
             Map<String, Object> authenticityResult = authenticityScorer.computeScore(
-                    metadataResult,
-                    tamperResult,
-                    ocrResult,
-                    elaImageFileName != null
-            );
+                    metadataResult, tamperResult, ocrResult, elaImageFileName != null);
 
-            // 7. Save analysis result
             AnalysisResult analysisResult = analysisResultRepository.findByScreenshotId(screenshotId)
                     .orElseGet(AnalysisResult::new);
             analysisResult.setScreenshot(screenshot);
@@ -140,29 +115,24 @@ public class AnalysisService {
             analysisResult.setMetadataJson(metadataResult);
             analysisResult.setTamperHeuristicsJson(tamperResult);
             analysisResult.setOcrText(ocrResult.get("ocr_text") instanceof String text ? text : null);
+            analysisResultRepository.saveAndFlush(analysisResult);
 
-            analysisResultRepository.save(analysisResult);
-
-            // 8. Update screenshot status to COMPLETED
             screenshot.setStatus(Screenshot.Status.COMPLETED);
             screenshot.setProcessedAt(new Date());
-            screenshotRepository.save(screenshot);
-
+            screenshotRepository.saveAndFlush(screenshot);
         } catch (Exception e) {
             screenshot.setStatus(Screenshot.Status.FAILED);
             screenshot.setProcessedAt(new Date());
             screenshot.setErrorMessage("Analysis failed. Check server diagnostics and retry.");
-            screenshotRepository.save(screenshot);
-            System.err.println("Analysis failed for screenshot ID " + screenshotId + " (" + e.getClass().getSimpleName() + ")");
+            try {
+                screenshotRepository.saveAndFlush(screenshot);
+            } catch (Exception statusUpdateError) {
+                log.error("Could not persist FAILED status for screenshot {}", screenshotId, statusUpdateError);
+            }
+            log.error("Analysis failed for screenshot {}", screenshotId, e);
         }
     }
 
-    /**
-     * Get the analysis result for a screenshot.
-     *
-     * @param screenshotId the ID of the screenshot
-     * @return the analysis result DTO
-     */
     public AnalysisResultDTO getAnalysisResult(Long screenshotId) {
         AnalysisResult analysisResult = analysisResultRepository.findByScreenshotId(screenshotId)
                 .orElseThrow(() -> new RuntimeException("Analysis result not found for screenshot ID " + screenshotId));
