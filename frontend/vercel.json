@@ -2,7 +2,7 @@
   "rewrites": [
     {
       "source": "/api/:match*",
-      "destination": "https://dfsa-backend.onrender.com/api/:match*"
+      "destination": "https://digital-forensic-screenshot-analyzer-production.up.railway.app/api/:match*"
     },
     {
       "source": "/(.*)",
