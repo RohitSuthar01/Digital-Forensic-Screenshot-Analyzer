@@ -2,6 +2,65 @@
 
 ### A Java-based platform for organizing screenshot evidence and reviewing forensic indicators.
 
+
+## Quick Access — Project Links
+
+| Resource | Access |
+|---|---|
+| GitHub Source Code | [Digital Forensic Screenshot Analyzer](https://github.com/RohitSuthar01/Digital-Forensic-Screenshot-Analyzer) |
+| Local Frontend | Open the URL printed by Vite after starting the frontend (commonly `http://localhost:5173`) |
+| Local Backend API Documentation | `http://localhost:8091/swagger-ui.html` after starting the backend |
+| Project Screenshots | See the screenshot gallery later in this README. The original image links are preserved. |
+
+> **Deployment note:** Vercel can host the frontend, but it does not automatically host this Java/Spring Boot backend, database, or permanent evidence storage. Configure and verify those services separately before sharing a production URL.
+
+## Demo Login Credentials
+
+These development/demo accounts are defined by the project's database seeder. Use the **username** and password in the login form.
+
+| Role | Username | Password |
+|---|---|---|
+| Administrator | `admin` | `Admin@123` |
+| Investigator | `investigator1` | `Invest@123` |
+| Viewer | `viewer1` | `Viewer@123` |
+
+> **Important:** The seeder creates each account only if that username does not already exist. If an existing database already contains the account, its saved password may be different. These public demo credentials are for local academic demonstration only; change or disable them before any real deployment.
+
+
+## Team Members and Project Roles
+
+The following table summarizes the team's documented module responsibilities. It describes the planned role distribution and is not, by itself, a claim about individual Git commit authorship.
+
+| Team Member | RTU Roll Number | Project Role | Key Responsibilities |
+|---|---|---|---|
+| Rohit Suthar | `24EARCS138` | Team Lead and Backend Integration | Coordinates the team; integrates the backend workflow; explains analysis orchestration, API/service flow, and same-case image comparison. |
+| Ritika Sharma | `24EARCS136` | Frontend UI/UX | Develops React/Vite pages, navigation, responsive layouts, upload and analysis screens, API integration, and loading/error/result states. |
+| Ronak Thadani | `24EARCS139` | Case Management and Database | Supports case and screenshot workflows, JPA persistence, entity/repository relationships, and database-backed result retrieval. |
+| Tanishk | `24EARCS172` | Image Forensics | Works on metadata, MD5/SHA-256 fingerprints, ELA, OCR, LSB screening, perceptual hashing, and heuristic indicators with their limitations. |
+| Rishi | `24EARCS133` | Testing and Documentation | Plans and reviews tests, checks workflow behavior, reviews reports, documents limitations, and supports project presentation. |
+
+## Main User Workflow
+
+1. Sign in with an account that has the required role.
+2. Create or open an investigation case.
+3. Upload a supported screenshot to that case.
+4. Start analysis and wait for its saved status and result.
+5. Review the available metadata, hashes, ELA image when applicable, OCR text, and other screening indicators.
+6. Select a target and reference screenshot from the **same case** and run comparison.
+7. Review the explanation and limitations, then generate a PDF report if needed.
+
+A hash mismatch means the file bytes differ; it does not prove that one image was edited or identify which image is original. Analysis outputs are indicators for human review, not a validated probability or proof of authenticity.
+
+## Suggested Faculty Demo
+
+1. Sign in using the local demo investigator account.
+2. Create a clearly named test case.
+3. Upload two labeled test images into that one case.
+4. Open the analysis result and explain the available indicators and any unavailable modules.
+5. Run a same-case comparison and explain what the hashes and pixel threshold actually measure.
+6. Refresh the case page to check persistence and open the PDF report.
+
+Use test images only; do not expose private screenshots, passwords, or real case evidence during a public demonstration.
 ---
 
 ## Week 1: Project Administration and Problem Definition
@@ -480,3 +539,6 @@ The case results table summarizes uploaded images and their current analysis sta
 ## License
 
 No license file was identified in the project root when this README was prepared. Add a license file and update this section if the project is distributed under a specific license.
+
+
+
