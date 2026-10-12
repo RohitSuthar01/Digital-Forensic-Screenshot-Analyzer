@@ -14,16 +14,13 @@ RUN mvn clean package -DskipTests
 FROM eclipse-temurin:17-jre-jammy
 WORKDIR /app
 
-# Install Tesseract OCR and native libraries
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends tesseract-ocr && \
-    rm -rf /var/lib/apt/lists/*
+# Install Tesseract OCR and English language data
+RUN apt-get update && apt-get install -y --no-install-recommends tesseract-ocr tesseract-ocr-eng && rm -rf /var/lib/apt/lists/*
+
+ENV TESSDATA_PREFIX=/usr/share/tesseract-ocr/4.00/tessdata
 
 # Copy built JAR from builder stage
 COPY --from=builder /app/target/digital-forensic-screenshot-analyzer-1.0.0.jar app.jar
 
-# Expose port (Render sets $PORT dynamically, Spring Boot defaults to 8091 or respects PORT)
 EXPOSE 8091
-
-# Start the application
 ENTRYPOINT ["sh", "-c", "java -Dserver.port=${PORT:-8091} -jar app.jar"]
