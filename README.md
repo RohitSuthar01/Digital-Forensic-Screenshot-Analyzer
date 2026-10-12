@@ -11,6 +11,7 @@
 | Local Frontend | Open the URL printed by Vite after starting the frontend (commonly `http://localhost:5173`) |
 | Local Backend API Documentation | `http://localhost:8091/swagger-ui.html` after starting the backend |
 | Project Screenshots | See the screenshot gallery later in this README. The original image links are preserved. |
+| Project Docs | | Project Screenshots | See the screenshot gallery later in this README. The original image links are preserved. |
 
 > **Deployment note:** Vercel can host the frontend, but it does not automatically host this Java/Spring Boot backend, database, or permanent evidence storage. Configure and verify those services separately before sharing a production URL.
 
