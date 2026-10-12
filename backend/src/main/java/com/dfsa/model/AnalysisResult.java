@@ -13,7 +13,6 @@ import java.util.Date;
         @Index(columnList = "screenshot_id")
 })
 public class AnalysisResult {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -28,6 +27,7 @@ public class AnalysisResult {
 
     private Integer authenticityScore; // nullable; populated only when a validated scoring model is configured
 
+    @Column(columnDefinition = "TEXT")
     private String verdictExplanation;
 
     // New field for ELA image file name (stored in the upload directory)
@@ -47,43 +47,31 @@ public class AnalysisResult {
     @Temporal(TemporalType.TIMESTAMP)
     private Date analyzedAt;
 
-    // Constructors
     public AnalysisResult() {
         this.analyzedAt = new Date();
     }
 
-    // Getters and Setters
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
-
     public com.dfsa.model.Screenshot getScreenshot() { return screenshot; }
     public void setScreenshot(com.dfsa.model.Screenshot screenshot) { this.screenshot = screenshot; }
-
     public AuthenticityVerdict getVerdict() { return verdict; }
     public void setVerdict(AuthenticityVerdict verdict) { this.verdict = verdict; }
-
     public Integer getAuthenticityScore() { return authenticityScore; }
     public void setAuthenticityScore(Integer authenticityScore) { this.authenticityScore = authenticityScore; }
-
     public String getVerdictExplanation() { return verdictExplanation; }
     public void setVerdictExplanation(String verdictExplanation) { this.verdictExplanation = verdictExplanation; }
-
     public String getElaImageFileName() { return elaImageFileName; }
     public void setElaImageFileName(String elaImageFileName) { this.elaImageFileName = elaImageFileName; }
-
     public java.util.Map<String, Object> getMetadataJson() { return metadataJson; }
     public void setMetadataJson(java.util.Map<String, Object> metadataJson) { this.metadataJson = metadataJson; }
-
     public java.util.Map<String, Object> getTamperHeuristicsJson() { return tamperHeuristicsJson; }
     public void setTamperHeuristicsJson(java.util.Map<String, Object> tamperHeuristicsJson) { this.tamperHeuristicsJson = tamperHeuristicsJson; }
-
     public String getOcrText() { return ocrText; }
     public void setOcrText(String ocrText) { this.ocrText = ocrText; }
-
     public Date getAnalyzedAt() { return analyzedAt; }
     public void setAnalyzedAt(Date analyzedAt) { this.analyzedAt = analyzedAt; }
 
-    // Enums
     public enum AuthenticityVerdict {
         AUTHENTIC, SUSPICIOUS, LIKELY_TAMPERED, INCONCLUSIVE
     }
