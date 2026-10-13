@@ -12,6 +12,7 @@
 | Local Backend API Documentation | `http://localhost:8091/swagger-ui.html` after starting the backend |
 | Project Screenshots | See the screenshot gallery later in this README. The original image links are preserved. |
 | Project Docs | [(https://drive.google.com/drive/folders/12OzYYRZeH8XE5R7Wcfsew0bJmSQ3eVLK?usp=drive_link)] |
+| Live Project | [(https://digital-forensic-screenshot-analyze.vercel.app/)] |
 
 > **Deployment note:** Vercel can host the frontend, but it does not automatically host this Java/Spring Boot backend, database, or permanent evidence storage. Configure and verify those services separately before sharing a production URL.
 
