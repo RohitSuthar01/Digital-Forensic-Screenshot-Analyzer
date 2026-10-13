@@ -34,7 +34,7 @@ The following table summarizes the team's documented module responsibilities. It
 
 | Team Member | RTU Roll Number | Project Role | Key Responsibilities |
 |---|---|---|---|
-| Rohit Suthar | `24EARCS138` | Team Lead and Backend Integration | Coordinates the team; integrates the backend workflow; explains analysis orchestration, API/service flow, and same-case image comparison. |
+| Rohit Suthar | `24EARCS138` |  Backend Integration | Coordinates the team; integrates the backend workflow; explains analysis orchestration, API/service flow, and same-case image comparison. |
 | Ritika Sharma | `24EARCS136` | Frontend UI/UX | Develops React/Vite pages, navigation, responsive layouts, upload and analysis screens, API integration, and loading/error/result states. |
 | Ronak Thadani | `24EARCS139` | Case Management and Database | Supports case and screenshot workflows, JPA persistence, entity/repository relationships, and database-backed result retrieval. |
 | Tanishk | `24EARCS172` | Image Forensics | Works on metadata, MD5/SHA-256 fingerprints, ELA, OCR, LSB screening, perceptual hashing, and heuristic indicators with their limitations. |
