@@ -13,6 +13,8 @@
 | Project Screenshots | See the screenshot gallery later in this README. The original image links are preserved. |
 | Project Docs | [(https://drive.google.com/drive/folders/12OzYYRZeH8XE5R7Wcfsew0bJmSQ3eVLK?usp=drive_link)] |
 | Live Project | [(https://digital-forensic-screenshot-analyze.vercel.app/)] |
+| SwaggerBackendAPIS | [(https://digital-forensic-screenshot-analyzer-production.up.railway.app/swagger-ui/index.html#/)] |
+| DATABASE | [(https://railway.com/project/ad4ea63f-d9a1-400e-b260-62105b7dc30d/service/17a476e6-76d7-4f0c-8f07-5c0654ae7738/database?environmentId=93c17687-0676-4632-99e7-693ffea5c306)] |
 
 > **Deployment note:** Vercel can host the frontend, but it does not automatically host this Java/Spring Boot backend, database, or permanent evidence storage. Configure and verify those services separately before sharing a production URL.
 
